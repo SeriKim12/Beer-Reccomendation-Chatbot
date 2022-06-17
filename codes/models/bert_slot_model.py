@@ -61,7 +61,7 @@ class BertSlotModel:
         
         hidden1 = Dense(256, activation='relu')(bert_sequence_output)
         hidden2 = Dense(128, activation='relu')(hidden1)
-        slots_output = TimeDistributed(Dense(self.slots_num, activation='softmax'))(bert_sequence_output)
+        slots_output = TimeDistributed(Dense(self.slots_num, activation='softmax'))(hidden2)
 
         print('slots output :', slots_output.shape)
 
