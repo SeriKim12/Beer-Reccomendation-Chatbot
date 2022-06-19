@@ -24,7 +24,7 @@ import random
 graph = tf.compat.v1.get_default_graph()
 bert_model_hub_path = '/content/drive/MyDrive/bert-module' # TODO 경로 고치기
 is_bert = True
- 
+
 ############################### TODO ##########################################
 # 슬롯태깅 모델과 벡터라이저 불러오기
 ###############################################################################
@@ -128,8 +128,9 @@ def get_bot_response():
   #     if z:
   #         app.slot_dict[k].append(z.group())
 
-  empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
-  filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
+  # empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
+  # filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
+  filledSlot = set(inferred_tags[0])
 
   greetings = ['안녕', '하이', 'hi', 'hello', '헤이', '뭐해']
   idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
@@ -149,6 +150,7 @@ def get_bot_response():
 
   endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
 
+  message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
@@ -171,29 +173,14 @@ def get_bot_response():
     return message
 
 
-  elif 'type' in inferred_tags[0] and 'abv' not in inferred_tags[0] and 'flavor' not in inferred_tags[0] and 'taste' not in inferred_tags[0]:
+  elif 'type' in filledSlot and 'abv' not in filledSlot and 'flavor' not in filledSlot and 'taste' not in filledSlot:
     message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
-    if 'abv' in inferred_tags[0] and 'flavor' in inferred_tags[0] and 'taste' in inferred_tags[0]:
-      message = '네게 딱 맞을 맥주를 찾고 있는 중...'
-    return message
-
-  elif 'abv' in inferred_tags[0] and 'type' not in inferred_tags[0] and 'flavor' not in inferred_tags[0] and 'taste' not in inferred_tags[0]:
-    message = '접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
-    if 'type' in inferred_tags[0] and 'flavor' in inferred_tags[0] and 'taste' in inferred_tags[0]:
-      message = '네게 딱 맞을 맥주를 찾고 있는 중...'
-    return message
-
-  elif 'flavor' in inferred_tags[0] and 'abv' not in inferred_tags[0] and 'type' not in inferred_tags[0] and 'taste' not in inferred_tags[0]:
-    message = '접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
-    if 'abv' in inferred_tags[0] and 'type' in inferred_tags[0] and 'taste' in inferred_tags[0]:
-      message = '네게 딱 맞을 맥주를 찾고 있는 중...'
-    return message
-
-  elif 'taste' in inferred_tags[0] and 'abv' not in inferred_tags[0] and 'flavor' not in inferred_tags[0] and 'type' not in inferred_tags[0]:
-    message = '접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
-    if 'abv' in inferred_tags[0] and 'flavor' in inferred_tags[0] and 'type' in inferred_tags[0]:
-      message = '네게 딱 맞을 맥주를 찾고 있는 중...'
-    return message
+    # if 'abv' in filledSlot and 'flavor' in filledSlot and 'taste' in filledSlot:
+    #   message2 = '네게 딱 맞을 맥주를 찾고 있는 중...'
+    #   return message2
+    # 왜 안되나 했는데 filledSlot에 나중에 입력한 정보들이 없기 때문이었다.
+  
+  return message
   
 
 
