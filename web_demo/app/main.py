@@ -24,7 +24,7 @@ import random
 graph = tf.compat.v1.get_default_graph()
 bert_model_hub_path = '/content/drive/MyDrive/bert-module' # TODO 경로 고치기
 is_bert = True
-
+ 
 ############################### TODO ##########################################
 # 슬롯태깅 모델과 벡터라이저 불러오기
 ###############################################################################
