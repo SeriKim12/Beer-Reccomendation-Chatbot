@@ -41,20 +41,8 @@ config = tf.ConfigProto(intra_op_parallelism_threads=1,
                         device_count = {'CPU': 1})
 sess = tf.compat.v1.Session(config=config)
 model = BertSlotModel.load('/content/drive/MyDrive/finetuned', sess)
-#model._make_predict_function()
+
 tokenizer = FullTokenizer(vocab_file=bert_vocab_path)
-
-# def exception_handling(slots, empty, filled):
-#   for slot in slots:
-#     if slot in empty:
-#       message = f'원하는 {slot}에 대해 알려줘!'
-#     elif slot in filled:
-#       message = f'알았어 {slot} 정보 수집 완료'
-
-#   return message
-
-
-
 
 beer_types = ['에일', 'IPA', '라거', '바이젠', '흑맥주']
 
@@ -81,7 +69,6 @@ cmds = {'명령어' : [], '종류' : beer_types, '도수' : beer_abv, '향' : be
 cmds['명령어'] = [k for k in cmds]
 
 app = Flask(__name__)
-#run_with_ngrok(app) # 코랩 실행 시
 app.static_folder = 'static'
 
 @app.route("/")
@@ -98,24 +85,17 @@ def home():
     
 @app.route("/get")
 def get_bot_response():
-  
-
   userText = request.args.get('msg').strip() # 사용자가 입력한 문장
 
   text_arr = tokenizer.tokenize(userText)
   text_arr = [' '.join(text_arr)]
   input_ids, input_mask, segment_ids = bert_vectorizer.transform(text_arr)
-  #inferred_tags, slot_score = model.predict_slots([input_ids, input_mask, segment_ids], tags_vectorizer)
-  # text_arr = tokenizer.tokenize(userText)
-  # input_ids, input_mask, segment_ids = bert_vectorizer.transform(' '.join(text_arr))
-
-  
-  #inferred_tags, slot_score = model.predict_slots([input_ids, input_mask, segment_ids], tags_vectorizer)
 
   # 예측
   with graph.as_default():
     with sess.as_default():
       inferred_tags, slot_score = model.predict_slots([input_ids, input_mask, segment_ids], tags_vectorizer)
+  print(text_arr)
   print(inferred_tags)
   print(slot_score)
 
@@ -125,11 +105,11 @@ def get_bot_response():
 
 
   # 슬롯태깅 실시
-  for i in range(0, len(inferred_tags[0])):
-    if slot_score[0][i] >= app.score_limit:
-      catch_slot(i, inferred_tags, text_arr, slot_text)
-    else:
-      print("something went wrong!")
+  # for i in range(0, len(inferred_tags[0])):
+  #   if slot_score[0][i] >= app.score_limit:
+  #     catch_slot(i, inferred_tags, text_arr, slot_text)
+  #   else:
+  #     print("something went wrong!")
 
 
   # 옵션의 이름과 일치하는지 검증
@@ -140,16 +120,9 @@ def get_bot_response():
   #     if z:
   #         app.slot_dict[k].append(z.group())
 
-  empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
-  filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
+  # empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
+  # filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
 
-  
-
-
-  # if userText in ['안녕', '하이', 'hi', 'hello']:
-  #   message = '헤이~~~'
-
-  # userText 안에 greetings 문자가 들어있으면 message = 헤이~~~ 맥주 한 잔 하실??
   greetings = ['안녕', '하이', 'hi', 'hello', '헤이', '뭐해']
   idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
         '잘 모르겠어', '잘 모르겠는데', '나 맥주 잘 몰라', '맥주 잘 모르는데', '모르겠네']
@@ -168,28 +141,16 @@ def get_bot_response():
 
   endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
 
-  
 
-  #if [txt for txt in greetings if txt in userText] is not None:
-  # if userText in greetings:
-  #   message = '헤이~~~ 맥주 한 잔 하실??'
-
-  
-  # if userText in yes:
-  #   message = '원하는 맥주에 대해 알려줘!'
-
-
-  # exception_handling(['종류', '도수', '향', '맛'], empty_slot, filled_slot)
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
-    
-  if userText in yes:
-    message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
+    if userText in yes:
+      message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
 
   elif userText in idk:
-    message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "필요해"를 입력해줘'
+    message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을 입력해줘'
     
-  elif userText == '필요해' : 
+  elif userText == '설명' : 
     message = answer
 
   #if [txt for txt in endings if txt in userText] is not None: 안녕의 '안'도 엔딩으로 잡아서 폐기
@@ -197,176 +158,28 @@ def get_bot_response():
     message = 'Okay bye...'
     #home(app)
 
-  if 'type' and 'abv' and 'flavor' and 'taste' not in inferred_tags[0] : #len(set(inferred_tags))==0: #filled_slot:
+  elif 'type' and 'abv' and 'flavor' and 'taste' not in inferred_tags[0] : #len(set(inferred_tags))==0: #filled_slot:
     message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
 
   #elif len(list(set(inferred_tags)))==1: inferred_tags의 유니크 값을 확인하려고 set으로 감싸고 길이 알아보려고
   # 리스트로 감쌌는데 TypeError: unhashable type: 'list' 라고 에러가 나서 포기함
-  elif 'type' in inferred_tags[0] and 'abv' and 'flavor' and 'taste' not in inferred_tags[0]:
+  # elif ('type' in inferred_tags[0]) and ('abv' and 'flavor' and 'taste' not in inferred_tags[0]):
+  elif (app.slot_dict['type'] is not None) and (app.slot_dict['abv'] is None and 
+  app.slot_dict['flavor'] is None and app.slot_dict['taste'] is None):
     message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
 
-  elif 'abv' in inferred_tags[0] and 'type' and 'flavor' and 'taste' not in inferred_tags[0]:
+  elif ('abv' in inferred_tags[0]) and ('type' and 'flavor' and 'taste' not in inferred_tags[0]):
     message = '접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
 
-  elif 'flavor' in inferred_tags[0] and 'abv' and 'type' and 'taste' not in inferred_tags[0]:
+  elif ('flavor' in inferred_tags[0]) and ('abv' and 'type' and 'taste' not in inferred_tags[0]):
     message = '접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
     
-  elif 'taste' in inferred_tags[0] and 'abv' and 'flavor' and 'type' not in inferred_tags[0]:
+  elif ('taste' in inferred_tags[0]) and ('abv' and 'flavor' and 'type' not in inferred_tags[0]):
     message = '접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
-
-  
-
-  # elif (['종류'] in filled_slot) and (['도수', '향', '맛'] in empty_slot):
-  #   message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
-  # elif (['종류', '도수'] in filled_slot) and (['향', '맛'] in empty_slot):
-  #   message = '오케이! 원하는 향과 맛은?'    
-  # elif (['종류', '향'] in filled_slot) and (['도수', '맛'] in empty_slot):
-  #   message = '오케이! 원하는 도수와 맛은?'
-  # elif (['종류', '맛'] in filled_slot) and (['도수', '향'] in empty_slot):
-  #   message = '오케이! 원하는 도수와 향은?'
-  # elif (['종류', '도수', '향'] in filled_slot) and (['맛'] in empty_slot):
-  #   message = '좋아 이제 마지막으로 원하는 맛은?'    
-  # elif (['종류', '도수', '맛'] in filled_slot) and (['향'] in empty_slot):
-  #   message = '좋아 이제 마지막으로 원하는 향은?'
-  # elif (['종류', '향', '맛'] in filled_slot) and (['도수'] in empty_slot):
-  #   message = '좋아 이제 마지막으로 원하는 도수는?'
-
-  # elif (['도수'] in filled_slot) and (['종류', '향', '맛'] in empty_slot):
-  #   message = '접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
-  # elif (['도수', '향'] in filled_slot) and (['종류', '맛'] in empty_slot):
-  #   message = '오케이! 원하는 종류와 맛은?'
-  # elif (['도수', '맛'] in filled_slot) and (['종류', '향'] in empty_slot):
-  #   message = '오케이! 원하는 종류와 향은?'
-  # elif (['도수', '향', '맛'] in filled_slot) and (['종류'] in empty_slot):
-  #   message = '좋아 이제 마지막으로 원하는 종류는?'      
-
-  # elif (['향'] in filled_slot) and (['종류', '도수', '맛'] in empty_slot):
-  #   message = '접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
-  # elif (['향', '맛'] in filled_slot) and (['종류', '도수'] in empty_slot):
-  #   message = '접수 완료! 이제 원하는 종류, 도수에 대해서도 알려줘'
-
-  # elif (['맛'] in filled_slot) and (['종류', '도수', '향'] in empty_slot):
-  #   message = '접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
-
-  # elif ['종류', '도수', '향', '맛'] in filled_slot:
-  #   message = '접수 완료!! 네게 딱 맞는 맥주를 찾고 있는 중...'
-
-
-  # endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
-  # #if [txt for txt in endings if txt in userText] is not None: 안녕의 '안'도 엔딩으로 잡아서 폐기
-  # if userText in endings:
-  #   message = 'Okay bye...'
-  #   #home(app)
-
 
   return message
 
-def catch_slot(i, inferred_tags, text_arr, slot_text):
-  if not inferred_tags[0][i] == "O":
-    word_piece = re.sub("_", " ", text_arr[i])
-    if word_piece == 'ᆫ':
-      word = slot_text[inferred_tags[0][i]]
-      slot_text[inferred_tags[0][i]] = word[:-1]+chr(ord(word[-1])+4)
-    else:    
-      slot_text[inferred_tags[0][i]] += word_piece
 
-
-
-
-  # elif ['종류'] in filled_slot:
-  #   if ['도수', '향', '맛'] in empty_slot:
-  #     message = f'접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
-  #   elif ['도수'] in filled_slot and ['향', '맛'] in empty_slot:
-  #     message = '오케이! 원하는 향과 맛은?'    
-  #   elif ['향'] in filled_slot and ['도수', '맛'] in empty_slot:
-  #     message = '오케이! 원하는 도수와 맛은?'
-  #   elif ['맛'] in filled_slot and ['도수', '향'] in empty_slot:
-  #     message = '오케이! 원하는 도수와 향은?'
-  #   elif ['도수', '향'] in filled_slot and ['맛'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 맛은?'    
-  #   elif ['도수', '맛'] in filled_slot and ['향'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 향은?'
-  #   elif ['향', '맛'] in filled_slot and ['도수'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 도수는?'
-
-
-  # elif ['도수'] in filled_slot:
-  #   if ['종류', '향', '맛'] in empty_slot:
-  #     message = f'접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
-  #   elif ['종류'] in filled_slot and ['향', '맛'] in empty_slot:
-  #     message = '오케이! 원하는 향과 맛은?'    
-  #   elif ['향'] in filled_slot and ['종류', '맛'] in empty_slot:
-  #     message = '오케이! 원하는 종류와 맛은?'
-  #   elif ['맛'] in filled_slot and ['종류', '향'] in empty_slot:
-  #     message = '오케이! 원하는 종류와 향은?'
-  #   elif ['종류', '향'] in filled_slot and ['맛'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 맛은?'    
-  #   elif ['종류', '맛'] in filled_slot and ['향'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 향?'
-  #   elif ['맛', '향'] in filled_slot and ['종류'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 종류는?'
-
-
-  # elif ['향'] in filled_slot:
-  #   if ['종류', '도수', '맛'] in empty_slot:
-  #     message = f'접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
-  #   elif ['종류'] in filled_slot and ['도수', '맛'] in empty_slot:
-  #     message = '오케이! 원하는 도수와 맛은?'    
-  #   elif ['도수'] in filled_slot and ['종류', '맛'] in empty_slot:
-  #     message = '오케이! 원하는 종류와 맛은?'
-  #   elif ['맛'] in filled_slot and ['종류', '도수'] in empty_slot:
-  #     message = '오케이! 원하는 종류와 도수는?'
-  #   elif ['종류', '도수'] in filled_slot and ['맛'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 맛은?'    
-  #   elif ['종류', '맛'] in filled_slot and ['도수'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 도수는?'
-  #   elif ['도수', '맛'] in filled_slot and ['종류'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 종류는?'
-
-
-  # elif ['맛'] in filled_slot:
-  #   if ['종류', '도수', '향'] in empty_slot:
-  #     message = f'접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
-  #   elif ['종류'] in filled_slot and ['도수', '향'] in empty_slot:
-  #     message = '오케이! 원하는 도수와 향은?'    
-  #   elif ['도수'] in filled_slot and ['종류', '향'] in empty_slot:
-  #     message = '오케이! 원하는 종류와 향은?'
-  #   elif ['향'] in filled_slot and ['종류', '도수'] in empty_slot:
-  #     message = '오케이! 원하는 종류와 도수는?'
-  #   elif ['종류', '도수'] in filled_slot and ['향'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 향은?'    
-  #   elif ['종류', '향'] in filled_slot and ['도수'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 도수는?'
-  #   elif ['도수', '향'] in filled_slot and ['종류'] in empty_slot:
-  #     message = '좋아 이제 마지막으로 원하는 종류는?'
-
-
-  # elif ['종류', '도수', '향', '맛'] in filled_slot:
-  #   message = '접수 완료!! 네게 딱 맞는 맥주를 찾고 있는 중...'
-
-  # if userText in ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']:
-  #   message = 'Okay bye...'
-
-  # userText 안에 endings 문자가 들어있으면 message = Okay bye
-#   endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
-#   #if [txt for txt in endings if txt in userText] is not None: 안녕의 '안'도 엔딩으로 잡아서 폐기
-#   if userText in endings:
-#     message = 'Okay bye...'
-#     #home(app)
-
-
-#   return message
-
-# def catch_slot(i, inferred_tags, text_arr, slot_text):
-#   if not inferred_tags[0][i] == "O":
-#     word_piece = re.sub("_", " ", text_arr[i])
-#     if word_piece == 'ᆫ':
-#       word = slot_text[inferred_tags[0][i]]
-#       slot_text[inferred_tags[0][i]] = word[:-1]+chr(ord(word[-1])+4)
-#     else:    
-#       slot_text[inferred_tags[0][i]] += word_piece
-
-    
 
   
 
