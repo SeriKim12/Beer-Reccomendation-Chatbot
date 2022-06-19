@@ -154,35 +154,69 @@ def get_bot_response():
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
-    return message
+
   elif userText in yes:
     message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
-    return message
 
   elif userText in idk:
     message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을 입력해줘'
-    return message
-    
+
   elif userText == '설명' : 
     message = answer
-    return message
 
-  #if [txt for txt in endings if txt in userText] is not None: 안녕의 '안'도 엔딩으로 잡아서 폐기
   elif userText in endings:
     message = 'Okay bye...'
-    return message
 
-
+  # 슬롯 1개씩만 있을 때
   elif 'type' in filledSlot and 'abv' not in filledSlot and 'flavor' not in filledSlot and 'taste' not in filledSlot:
     message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
-    # if 'abv' in filledSlot and 'flavor' in filledSlot and 'taste' in filledSlot:
-    #   message2 = '네게 딱 맞을 맥주를 찾고 있는 중...'
-    #   return message2
-    # 왜 안되나 했는데 filledSlot에 나중에 입력한 정보들이 없기 때문이었다.
+
+  elif 'abv' in filledSlot and 'type' not in filledSlot and 'flavor' not in filledSlot and 'taste' not in filledSlot:
+    message = '접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
+
+  elif 'flavor' in filledSlot and 'abv' not in filledSlot and 'type' not in filledSlot and 'taste' not in filledSlot:
+    message = '접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
+
+  elif 'taste' in filledSlot and 'abv' not in filledSlot and 'flavor' not in filledSlot and 'type' not in filledSlot:
+    message = '접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
+
+  # 슬롯 2개씩 : 종류도수, 종류향, 종류맛, 도수향, 도수맛, 향맛
+  elif 'type' in filledSlot and 'abv' in filledSlot and 'flavor' not in filledSlot and 'taste' not in filledSlot:
+    message = '접수 완료! 이제 원하는 향, 맛에 대해서도 알려줘'
+
+  elif 'type' in filledSlot and 'flavor' in filledSlot and 'abv' not in filledSlot and 'taste' not in filledSlot:
+    message = '접수 완료! 이제 원하는 도수, 맛에 대해서도 알려줘'
+
+  elif 'type' in filledSlot and 'taste' in filledSlot and 'abv' not in filledSlot and 'flavor' not in filledSlot:
+    message = '접수 완료! 이제 원하는 도수, 향에 대해서도 알려줘'
+
+  elif 'abv' in filledSlot and 'flavor' in filledSlot and 'type' not in filledSlot and 'taste' not in filledSlot:
+    message = '접수 완료! 이제 원하는 종류, 맛에 대해서도 알려줘'
+
+  elif 'abv' in filledSlot and 'taste' in filledSlot and 'type' not in filledSlot and 'flavor' not in filledSlot:
+    message = '접수 완료! 이제 원하는 종류, 향에 대해서도 알려줘'
+
+  elif 'flavor' in filledSlot and 'taste' in filledSlot and 'abv' not in filledSlot and 'type' not in filledSlot:
+    message = '접수 완료! 이제 원하는 종류, 도수에 대해서도 알려줘'
+
+  # 슬롯 3개씩 : 종류도수향, 종류도수맛, 종류향맛, 도수향맛
+  elif 'type' in filledSlot and 'abv' in filledSlot and 'flavor' in filledSlot and 'taste' not in filledSlot:
+    message = '접수 완료! 이제 원하는 맛에 대해서도 알려줘'
+
+  elif 'type' in filledSlot and 'abv' in filledSlot and 'taste' in filledSlot and 'flavor' not in filledSlot:
+    message = '접수 완료! 이제 원하는 향에 대해서도 알려줘'  
+
+  elif 'type' in filledSlot and 'flavor' in filledSlot and 'taste' in filledSlot and 'abv' not in filledSlot:
+    message = '접수 완료! 이제 원하는 도수에 대해서도 알려줘'  
+
+  elif 'abv' in filledSlot and 'flavor' in filledSlot and 'taste' in filledSlot and 'type' not in filledSlot:
+    message = '접수 완료! 이제 원하는 종류에 대해서도 알려줘'  
+  
+  # 슬롯 4개
+  elif 'type' in filledSlot and 'abv' in filledSlot and 'flavor' in filledSlot and 'type' in filledSlot:
+    message = '네게 딱 맞을 맥주를 찾고 있는 중...'
   
   return message
-  
-
 
 
 ############################### TODO ##########################################
