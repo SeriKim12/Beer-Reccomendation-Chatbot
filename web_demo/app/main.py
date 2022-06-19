@@ -86,6 +86,14 @@ def home():
 @app.route("/get")
 def get_bot_response():
   userText = request.args.get('msg').strip() # 사용자가 입력한 문장
+  if userText[0] == "!":
+    try:
+        li = cmds[userText[1:]]
+        message = "<br />\n".join(li)
+    except:
+        message = "입력한 명령어가 존재하지 않습니다."
+
+    return message
 
   text_arr = tokenizer.tokenize(userText)
   text_arr = [' '.join(text_arr)]
@@ -112,7 +120,7 @@ def get_bot_response():
   #     print("something went wrong!")
 
 
-  # 옵션의 이름과 일치하는지 검증
+  # # 옵션의 이름과 일치하는지 검증
   # for k in app.slot_dict:
   #   for x in dic[k]:
   #     x = x.lower().replace(" ", "\s*")
@@ -120,8 +128,8 @@ def get_bot_response():
   #     if z:
   #         app.slot_dict[k].append(z.group())
 
-  # empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
-  # filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
+  empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
+  filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
 
   greetings = ['안녕', '하이', 'hi', 'hello', '헤이', '뭐해']
   idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
@@ -144,41 +152,146 @@ def get_bot_response():
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
-    if userText in yes:
-      message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
+    return message
+  elif userText in yes:
+    message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
+    return message
 
   elif userText in idk:
     message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을 입력해줘'
+    return message
     
   elif userText == '설명' : 
     message = answer
+    return message
 
   #if [txt for txt in endings if txt in userText] is not None: 안녕의 '안'도 엔딩으로 잡아서 폐기
   elif userText in endings:
     message = 'Okay bye...'
-    #home(app)
+    return message
 
-  elif 'type' and 'abv' and 'flavor' and 'taste' not in inferred_tags[0] : #len(set(inferred_tags))==0: #filled_slot:
-    message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
+
+  # elif 'type' and 'abv' and 'flavor' and 'taste' not in inferred_tags[0] : #len(set(inferred_tags))==0: #filled_slot:
+  #   message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
+
+  elif 'type' in inferred_tags[0] and 'abv' not in inferred_tags[0] and 'flavor' not in inferred_tags[0] and 'taste' not in inferred_tags[0]:
+    message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
+    return message
+
+  # elif '종류' in filled_slot and '도수' in empty_slot and '향' in empty_slot and '맛'in empty_slot:
+  #   message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
+  #   return message
 
   #elif len(list(set(inferred_tags)))==1: inferred_tags의 유니크 값을 확인하려고 set으로 감싸고 길이 알아보려고
   # 리스트로 감쌌는데 TypeError: unhashable type: 'list' 라고 에러가 나서 포기함
   # elif ('type' in inferred_tags[0]) and ('abv' and 'flavor' and 'taste' not in inferred_tags[0]):
-  elif (app.slot_dict['type'] is not None) and (app.slot_dict['abv'] is None and 
-  app.slot_dict['flavor'] is None and app.slot_dict['taste'] is None):
-    message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
+  # elif (app.slot_dict['type'] is not None) and (app.slot_dict['abv'] is None and 
+  # app.slot_dict['flavor'] is None and app.slot_dict['taste'] is None):
+  #   message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
 
-  elif ('abv' in inferred_tags[0]) and ('type' and 'flavor' and 'taste' not in inferred_tags[0]):
-    message = '접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
+  # elif ('abv' in inferred_tags[0]) and ('type' and 'flavor' and 'taste' not in inferred_tags[0]):
+  #   message = '접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
 
-  elif ('flavor' in inferred_tags[0]) and ('abv' and 'type' and 'taste' not in inferred_tags[0]):
-    message = '접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
+  # elif ('flavor' in inferred_tags[0]) and ('abv' and 'type' and 'taste' not in inferred_tags[0]):
+  #   message = '접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
     
-  elif ('taste' in inferred_tags[0]) and ('abv' and 'flavor' and 'type' not in inferred_tags[0]):
-    message = '접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
+  # elif ('taste' in inferred_tags[0]) and ('abv' and 'flavor' and 'type' not in inferred_tags[0]):
+  #   message = '접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
 
-  return message
+  # return message
 
+# def catch_slot(i, inferred_tags, text_arr, slot_text):
+#   if not inferred_tags[0][i] == "O":
+#     word_piece = re.sub("_", " ", text_arr[i])
+#     if word_piece == 'ᆫ':
+#       word = slot_text[inferred_tags[0][i]]
+#       slot_text[inferred_tags[0][i]] = word[:-1]+chr(ord(word[-1])+4)
+#     else:    
+#       slot_text[inferred_tags[0][i]] += word_piece
+
+
+
+
+  # elif ['종류'] in filled_slot:
+  #   if ['도수', '향', '맛'] in empty_slot:
+  #     message = f'접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
+  #   elif ['도수'] in filled_slot and ['향', '맛'] in empty_slot:
+  #     message = '오케이! 원하는 향과 맛은?'    
+  #   elif ['향'] in filled_slot and ['도수', '맛'] in empty_slot:
+  #     message = '오케이! 원하는 도수와 맛은?'
+  #   elif ['맛'] in filled_slot and ['도수', '향'] in empty_slot:
+  #     message = '오케이! 원하는 도수와 향은?'
+  #   elif ['도수', '향'] in filled_slot and ['맛'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 맛은?'    
+  #   elif ['도수', '맛'] in filled_slot and ['향'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 향은?'
+  #   elif ['향', '맛'] in filled_slot and ['도수'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 도수는?'
+
+
+  # elif ['도수'] in filled_slot:
+  #   if ['종류', '향', '맛'] in empty_slot:
+  #     message = f'접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
+  #   elif ['종류'] in filled_slot and ['향', '맛'] in empty_slot:
+  #     message = '오케이! 원하는 향과 맛은?'    
+  #   elif ['향'] in filled_slot and ['종류', '맛'] in empty_slot:
+  #     message = '오케이! 원하는 종류와 맛은?'
+  #   elif ['맛'] in filled_slot and ['종류', '향'] in empty_slot:
+  #     message = '오케이! 원하는 종류와 향은?'
+  #   elif ['종류', '향'] in filled_slot and ['맛'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 맛은?'    
+  #   elif ['종류', '맛'] in filled_slot and ['향'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 향?'
+  #   elif ['맛', '향'] in filled_slot and ['종류'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 종류는?'
+
+
+  # elif ['향'] in filled_slot:
+  #   if ['종류', '도수', '맛'] in empty_slot:
+  #     message = f'접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
+  #   elif ['종류'] in filled_slot and ['도수', '맛'] in empty_slot:
+  #     message = '오케이! 원하는 도수와 맛은?'    
+  #   elif ['도수'] in filled_slot and ['종류', '맛'] in empty_slot:
+  #     message = '오케이! 원하는 종류와 맛은?'
+  #   elif ['맛'] in filled_slot and ['종류', '도수'] in empty_slot:
+  #     message = '오케이! 원하는 종류와 도수는?'
+  #   elif ['종류', '도수'] in filled_slot and ['맛'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 맛은?'    
+  #   elif ['종류', '맛'] in filled_slot and ['도수'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 도수는?'
+  #   elif ['도수', '맛'] in filled_slot and ['종류'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 종류는?'
+
+
+  # elif ['맛'] in filled_slot:
+  #   if ['종류', '도수', '향'] in empty_slot:
+  #     message = f'접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
+  #   elif ['종류'] in filled_slot and ['도수', '향'] in empty_slot:
+  #     message = '오케이! 원하는 도수와 향은?'    
+  #   elif ['도수'] in filled_slot and ['종류', '향'] in empty_slot:
+  #     message = '오케이! 원하는 종류와 향은?'
+  #   elif ['향'] in filled_slot and ['종류', '도수'] in empty_slot:
+  #     message = '오케이! 원하는 종류와 도수는?'
+  #   elif ['종류', '도수'] in filled_slot and ['향'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 향은?'    
+  #   elif ['종류', '향'] in filled_slot and ['도수'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 도수는?'
+  #   elif ['도수', '향'] in filled_slot and ['종류'] in empty_slot:
+  #     message = '좋아 이제 마지막으로 원하는 종류는?'
+
+
+  # elif ['종류', '도수', '향', '맛'] in filled_slot:
+  #   message = '접수 완료!! 네게 딱 맞는 맥주를 찾고 있는 중...'
+
+  # if userText in ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']:
+  #   message = 'Okay bye...'
+
+  # userText 안에 endings 문자가 들어있으면 message = Okay bye
+#   endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
+#   #if [txt for txt in endings if txt in userText] is not None: 안녕의 '안'도 엔딩으로 잡아서 폐기
+#   if userText in endings:
+#     message = 'Okay bye...'
+#     #home(app)
 
 
   
