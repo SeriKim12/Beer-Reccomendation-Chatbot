@@ -184,7 +184,9 @@ def get_bot_response():
       message = '향은요?' 
     elif ('맛' in empty_slot) :
       message = '맛은요?'
-
+    elif ('종류' in filled_slot and '도수' in filled_slot and '향' in filled_slot and '맛' in filled_slot) :
+      message = '추천해드릴게요 잠시만 기다려주세요!!'
+    
 
     return message  
 
