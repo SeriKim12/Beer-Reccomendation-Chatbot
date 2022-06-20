@@ -2,7 +2,7 @@ import random
 import re
 
 # 슬롯 : 종류, 도수, 맛, 향 
-beer_types = ['/type;에일/', '/type;IPA/', '/type;라거/', '/type;바이젠/', '/type;흑맥주/']
+beer_types = ['/types;에일/', '/types;IPA/', '/types;라거/', '/types;바이젠/', '/types;흑맥주/']
 
 beer_abv = ['/abv;3도/', '/abv;4도/', '/abv;5도/', '/abv;6도/', '/abv;7도/', '/abv;8도/',
             '/abv;3도이상/', '/abv;4도이상/', '/abv;5도이상/', '/abv;6도이상/', '/abv;7도이상/',
@@ -46,7 +46,7 @@ def slots_txt(filename):
             line = line.replace("{4}", rnd_taste).strip()
             
             
-            # (ord(rnd_types[-2])-ord('가')) % 28 == 4 or 8: # 4면 받침이 ㄴ, 8이면 ㄹ
+            #(ord(rnd_types[-2])-ord('가')) % 28 == 4 or 8: # 4면 받침이 ㄴ, 8이면 ㄹ
             if 44032 <= ord(rnd_types[-2]) <= 55203 and (ord(rnd_types[-2]) - ord("가")) % 28 > 0:   
                 line = line.replace(rnd_types+'면', rnd_types+'이면')
                 line = line.replace(rnd_types+'가', rnd_types+'이')
@@ -65,10 +65,11 @@ def slots_txt(filename):
                 
             
             # 정규 표현식
-            line = re.sub(re.compile(r'/type;흑맥주/\s*맥주+\s*'), '/type;흑맥주/', line)
-            line = re.sub(re.compile(r'/type;바이젠/\s*로'), '/type;바이젠/으로', line)
+            line = re.sub(re.compile(r'/types;흑맥주/\s*맥주+\s*'), '/types;흑맥주/', line)
+            line = re.sub(re.compile(r'/types;바이젠/\s*로'), '/types;바이젠/으로', line)
             
             line = re.sub(re.compile(r'도\s*이상/로'), '도 이상/으로', line)
+            line = re.sub(re.compile(r'도\s*이상/고'), '도 이상/이고', line)
             
             line = re.sub(re.compile(r'/taste;과일/\s*(거|걸로|게|건데|으로|것)'), '/taste;과일/맛 나는 거', line)
             
