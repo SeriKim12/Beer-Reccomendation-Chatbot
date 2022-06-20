@@ -96,11 +96,7 @@ def get_bot_response():
 
     return message
 
-  # text_arr = tokenizer.tokenize(userText)
-  # text_arr = [' '.join(text_arr)]
-  # input_ids, input_mask, segment_ids = bert_vectorizer.transform(text_arr)
-
-
+  
   text_arr = tokenizer.tokenize(userText)
   input_ids, input_mask, segment_ids = bert_vectorizer.transform([" ".join(text_arr)])
 
@@ -118,20 +114,13 @@ def get_bot_response():
   slot_text = {k: "" for k in app.slot_dict}
 
 
-  # # 슬롯태깅 실시
-  # for i in range(0, len(inferred_tags[0])):
-  #   if slot_score[0][i] >= app.score_limit:
-  #     catch_slot(i, inferred_tags, text_arr, slot_text)
-  #   else:
-  #     print("something went wrong!")
-
   # 슬롯태깅 실시
   for i in range(0, len(inferred_tags[0])):     
     if slot_score[0][i] >= app.score_limit:
       if not inferred_tags[0][i] == "O":
         word_piece = re.sub("_", " ", text_arr[i])       
         slot_text[inferred_tags[0][i]] += word_piece
-      #catch_slot(i, inferred_tags, text_arr, slot_text)
+      
       #태그가 '0'가 아니면 text_arr에서 _를 지우고  slot_text에서 해당하는 태그에 단어를 담는다. 
       ##slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
     else:
