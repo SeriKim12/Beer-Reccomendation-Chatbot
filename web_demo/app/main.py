@@ -96,9 +96,13 @@ def get_bot_response():
 
     return message
 
+  # text_arr = tokenizer.tokenize(userText)
+  # text_arr = [' '.join(text_arr)]
+  # input_ids, input_mask, segment_ids = bert_vectorizer.transform(text_arr)
+
+
   text_arr = tokenizer.tokenize(userText)
-  text_arr = [' '.join(text_arr)]
-  input_ids, input_mask, segment_ids = bert_vectorizer.transform(text_arr)
+  input_ids, input_mask, segment_ids = bert_vectorizer.transform([" ".join(text_arr)])
 
   # 예측
   with graph.as_default():
@@ -181,55 +185,14 @@ def get_bot_response():
   elif userText in endings:
     message = 'Okay bye...'
 
+  elif ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
+    message = '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋냐고~~~~~'
 
-  # 슬롯 1개씩만 있을 때
-  elif 'types' in filled_slot :# and 'abv' not in filledSlot and 'flavor' not in filledSlot and 'taste' not in filledSlot:
-    message = '접수 완료! 이제 원하는 도수, 향, 맛에 대해서도 알려줘'
 
-  elif 'abv' in filled_slot :#  and 'type' not in filledSlot and 'flavor' not in filledSlot and 'taste' not in filledSlot:
-    message = '접수 완료! 이제 원하는 종류, 향, 맛에 대해서도 알려줘'
-
-  elif 'flavor' in filled_slot :#  and 'abv' not in filledSlot and 'type' not in filledSlot and 'taste' not in filledSlot:
-    message = '접수 완료! 이제 원하는 종류, 도수, 맛에 대해서도 알려줘'
-
-  elif 'taste' in filled_slot :#  and 'abv' not in filledSlot and 'flavor' not in filledSlot and 'type' not in filledSlot:
-    message = '접수 완료! 이제 원하는 종류, 도수, 향에 대해서도 알려줘'
-
-  # 슬롯 2개씩 : 종류도수, 종류향, 종류맛, 도수향, 도수맛, 향맛
-  elif 'types' in filled_slot and 'abv' in filled_slot :#  and 'flavor' not in filledSlot and 'taste' not in filledSlot:
-    message = '접수 완료! 이제 원하는 향, 맛에 대해서도 알려줘'
-
-  elif 'types' in filled_slot and 'flavor' in filled_slot :#  and 'abv' not in filledSlot and 'taste' not in filledSlot:
-    message = '접수 완료! 이제 원하는 도수, 맛에 대해서도 알려줘'
-
-  elif 'types' in filled_slot and 'taste' in filled_slot :#  and 'abv' not in filledSlot and 'flavor' not in filledSlot:
-    message = '접수 완료! 이제 원하는 도수, 향에 대해서도 알려줘'
-
-  elif 'abv' in filled_slot and 'flavor' in filled_slot :#  and 'type' not in filledSlot and 'taste' not in filledSlot:
-    message = '접수 완료! 이제 원하는 종류, 맛에 대해서도 알려줘'
-
-  elif 'abv' in filled_slot and 'taste' in filled_slot :#  and 'type' not in filledSlot and 'flavor' not in filledSlot:
-    message = '접수 완료! 이제 원하는 종류, 향에 대해서도 알려줘'
-
-  elif 'flavor' in filled_slot and 'taste' in filled_slot :#  and 'abv' not in filledSlot and 'type' not in filledSlot:
-    message = '접수 완료! 이제 원하는 종류, 도수에 대해서도 알려줘'
-
-  # 슬롯 3개씩 : 종류도수향, 종류도수맛, 종류향맛, 도수향맛
-  elif 'types' in filled_slot and 'abv' in filled_slot and 'flavor' in filled_slot :#  and 'taste' not in filledSlot:
-    message = '접수 완료! 이제 원하는 맛에 대해서도 알려줘'
-
-  elif 'types' in filled_slot and 'abv' in filled_slot and 'taste' in filled_slot :#  and 'flavor' not in filledSlot:
-    message = '접수 완료! 이제 원하는 향에 대해서도 알려줘'  
-
-  elif 'types' in filled_slot and 'flavor' in filled_slot and 'taste' in filled_slot :#  and 'abv' not in filledSlot:
-    message = '접수 완료! 이제 원하는 도수에 대해서도 알려줘'  
-
-  elif 'abv' in filled_slot and 'flavor' in filled_slot and 'taste' in filled_slot :#  and 'type' not in filledSlot:
-    message = '접수 완료! 이제 원하는 종류에 대해서도 알려줘'  
-  
-  # 슬롯 4개
-  elif 'types' in filled_slot and 'abv' in filled_slot and 'flavor' in filled_slot and 'type' in filled_slot:
+  elif ('종류' in filled_slot and '도수' in filled_slot and '향' in filled_slot and '맛' in filled_slot) :
     message = '네게 딱 맞을 맥주를 찾고 있는 중...'
+
+
 
 
   
