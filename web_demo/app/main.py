@@ -150,6 +150,9 @@ def get_bot_response():
   empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
   filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
 
+  print(empty_slot)
+  print(filled_slot)
+
   greetings = ['안녕', '하이', 'hi', 'hello', '헤이', '뭐해']
   idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
         '잘 모르겠어', '잘 모르겠는데', '나 맥주 잘 몰라', '맥주 잘 모르는데', '모르겠네', '글쎄']
@@ -165,6 +168,8 @@ def get_bot_response():
   answer = mType + mType2 + mAbv + mFlavor + mTaste
   
   yes = ['그래', '좋아', '좋지', '당연하지', '물론', '응', '부탁해', '네', '어', 'ㅇ']
+
+  no = ['아니', '괜찮아', '아니아니', 'ㄴㄴ', '그냥 추천해줘', '없어']
 
   endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
 
@@ -185,15 +190,357 @@ def get_bot_response():
   elif userText in endings:
     message = 'Okay bye...'
 
+  # 태깅된 슬롯이 0개
   elif ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
-    message = '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋냐고~~~~~'
+    message = '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??'
 
+  # 사용자가 추가 조건을 없다고 하고 태깅 슬롯이 1개 이상이면 추천 바로 시작
+  elif userText in no and len(filled_slot)>0 : 
+    message = '맥주 추천 시작!!'
 
+  # 태깅된 슬롯이 4개
   elif ('종류' in filled_slot and '도수' in filled_slot and '향' in filled_slot and '맛' in filled_slot) :
-    message = '네게 딱 맞을 맥주를 찾고 있는 중...'
+    message = '라져! 네게 딱 맞을 맥주를 찾고 있는 중...'
+
+  # 태깅된 슬롯이 3개 : 종류도수향, 종류도수맛, 도수맛향
+  elif ('종류' in filled_slot and '도수' in filled_slot and '향' in filled_slot) and ('맛' in empty_slot):
+    message = f'{app.slot_dict["types"]}, {app.slot_dict["abv"]}, {app.slot_dict["flavor"]} 말이지? 원하는 맛은 있어?'
+    if ('맛' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+  elif ('종류' in filled_slot and '도수' in filled_slot and '맛' in filled_slot) and ('향' in empty_slot):
+    message = f'{app.slot_dict["types"]}, {app.slot_dict["abv"]}, {app.slot_dict["taste"]} 말이지? 원하는 향은 있어?'
+    if ('향' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  elif ('맛' in filled_slot and '도수' in filled_slot and '향' in filled_slot) and ('종류' in empty_slot):
+    message = f'{app.slot_dict["taste"]}, {app.slot_dict["abv"]}, {app.slot_dict["flavor"]} 말이지? 원하는 종류는 있어?'
+    if ('종류' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["types"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  # 태깅된 슬롯이 2개 : 종류도수, 종류향, 종류맛, 도수향, 도수맛, 향맛
+  elif ('종류' in filled_slot and '도수' in filled_slot) and ('향' in empty_slot and '맛' in empty_slot):
+    message = f'{app.slot_dict["types"]}, {app.slot_dict["abv"]} 말이지? 추가적인 고려 사항은 있어?'
+
+    # 향만 추가했을 때
+    if ('향' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["flavor"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 맛만 추가했을 때
+    elif ('맛' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 향 맛 둘 다 추가했을 때
+    elif ('향' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["flavor"]}, {app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+  # 종류 향
+  elif ('종류' in filled_slot and '향' in filled_slot) and ('도수' in empty_slot and '맛' in empty_slot):
+    message = f'{app.slot_dict["types"]}, {app.slot_dict["flavor"]} 말이지? 추가적인 고려 사항은 있어?'
+
+    # 도수만 추가했을 때
+    if ('도수' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 맛만 추가했을 때
+    elif ('맛' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수 맛 둘 다 추가했을 때
+    elif ('도수' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["abv"]}, {app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  # 종류 맛
+  elif ('종류' in filled_slot and '맛' in filled_slot) and ('향' in empty_slot and '도수' in empty_slot):
+    message = f'{app.slot_dict["types"]}, {app.slot_dict["taste"]} 말이지? 추가적인 고려 사항은 있어?'
+
+    # 도수만 추가했을 때
+    if ('도수' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 향만 추가했을 때
+    elif ('향' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["flavor"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수 향 둘 다 추가했을 때
+    elif ('도수' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["abv"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  # 도수 향
+  elif ('도수' in filled_slot and '향' in filled_slot) and ('종류' in empty_slot and '맛' in empty_slot):
+    message = f'{app.slot_dict["abv"]}, {app.slot_dict["flavor"]} 말이지? 추가적인 고려 사항은 있어?'
+
+    # 종류만 추가했을 때
+    if ('종류' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["types"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 맛만 추가했을 때
+    elif ('맛' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 종류 맛 둘 다 추가했을 때
+    elif ('종류' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["types"]}, {app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  # 도수 맛
+  elif ('도수' in filled_slot and '맛' in filled_slot) and ('종류' in empty_slot and '향' in empty_slot):
+    message = f'{app.slot_dict["abv"]}, {app.slot_dict["taste"]} 말이지? 추가적인 고려 사항은 있어?'
+
+    # 종류만 추가했을 때
+    if ('종류' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["types"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 향만 추가했을 때
+    elif ('향' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["flavor"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 종류 향 둘 다 추가했을 때
+    elif ('종류' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["types"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  # 향 맛
+  elif ('향' in filled_slot and '맛' in filled_slot) and ('종류' in empty_slot and '도수' in empty_slot):
+    message = f'{app.slot_dict["flavor"]}, {app.slot_dict["taste"]} 말이지? 추가적인 고려 사항은 있어?'
+
+    # 종류만 추가했을 때
+    if ('종류' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["types"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수만 추가했을 때
+    if ('도수' in filled_slot) and len(filled_slot)==3 :
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...' 
+    
+    # 종류 도수 둘 다 추가했을 때
+    elif ('종류' in filled_slot) and ('도수' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["types"]}, {app.slot_dict["abv"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  # 태깅된 슬롯이 1개
+  # 종류
+  elif ('종류' in filled_slot) and ('도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
+    message = f'{app.slot_dict["types"]} 말이지? 다른 고려 사항은 있어?'
+
+    # 도수만 추가
+    if ('도수' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'     
+
+    # 향만 추가
+    elif ('향' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["flavor"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 맛만 추가
+    elif ('맛' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수 향 추가
+    elif ('도수' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+    
+    # 도수 맛 추가
+    elif ('도수' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 향 맛 추가
+    elif ('맛' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+    
+    # 도수 향 맛
+    elif ('도수' in filled_slot) and ('향' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["abv"]}, {app.slot_dict["flavor"]}, {app.slot_dict["taste"]} 까지 추가해서 맥주 추천 시작!!'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
 
 
 
+
+  elif ('도수' in filled_slot) and ('종류' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
+    message = f'{app.slot_dict["abv"]} 말이지? 다른 고려 사항은 있어?'
+
+    # 종류만 추가
+    if ('종류' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["types"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 향만 추가
+    elif ('향' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["flavor"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'    
+
+    # 맛만 추가
+    elif ('맛' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 종류 향 추가
+    elif ('종류' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["types"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 종류 맛 추가
+    elif ('종류' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["types"]}, {app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...' 
+
+    # 향 맛 추가
+    elif ('맛' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 종류 향 맛
+    elif ('향' in filled_slot) and ('종류' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["types"]}, {app.slot_dict["flavor"]}, {app.slot_dict["taste"]} 까지 추가해서 맥주 추천 시작!!'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+ 
+
+
+
+  elif ('향' in filled_slot) and ('도수' in empty_slot and '종류' in empty_slot and '맛' in empty_slot):
+    message = f'{app.slot_dict["flavor"]} 말이지? 다른 고려 사항은 있어?'
+
+    # 도수만 추가
+    if ('도수' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 종류만 추가
+    if ('종류' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["types"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 맛만 추가
+    elif ('맛' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["taste"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수 종류 추가
+    elif ('도수' in filled_slot) and ('종류' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}, {app.slot_dict["types"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수 맛 추가
+    elif ('도수' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}, {app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 종류 맛 추가
+    elif ('종류' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["types"]}, {app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+    
+    # 도수 종류 맛
+    elif ('도수' in filled_slot) and ('종류' in filled_slot) and ('맛' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["types"]}, {app.slot_dict["abv"]}, {app.slot_dict["taste"]} 까지 추가해서 맥주 추천 시작!!'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  elif ('맛' in filled_slot) and ('도수' in empty_slot and '향' in empty_slot and '종류' in empty_slot):
+    message = f'{app.slot_dict["taste"]} 말이지? 다른 고려 사항은 있어?' 
+
+    # 도수만 추가
+    if ('도수' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 향만 추가
+    elif ('향' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["flavor"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'   
+
+    # 종류만 추가
+    if ('종류' in filled_slot) and len(filled_slot)==2 :
+      if userText in no :
+        message = f'{app.slot_dict["types"]}까지만 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수 향 추가
+    elif ('도수' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 도수 종류 추가
+    elif ('도수' in filled_slot) and ('종류' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["abv"]}, {app.slot_dict["types"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+
+    # 향 종류 추가
+    elif ('종류' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==3:
+      if userText in no :
+        message = f'{app.slot_dict["types"]}, {app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
+    
+    # 도수 향 종류
+    elif ('도수' in filled_slot) and ('종류' in filled_slot) and ('향' in filled_slot) and len(filled_slot)==4:
+      message = f'{app.slot_dict["types"]}, {app.slot_dict["abv"]}, {app.slot_dict["flavor"]} 까지 추가해서 맥주 추천 시작!!'
+
+    # 추가를 아예 안했을 때
+    elif userText in no :
+      message = '맥주 추천 시작!!'
+
+
+  
+
+
+  
 
   
   return message
