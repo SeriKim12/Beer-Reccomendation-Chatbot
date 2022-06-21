@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+#################### 병합중 ############################
+
 from flask import Flask, render_template, request
 from flask_ngrok import run_with_ngrok
 import tensorflow as tf
@@ -10,8 +12,10 @@ from models.bert_slot_model import BertSlotModel
 from to_array.bert_to_array import BERTToArray
 from to_array.tokenizationK import FullTokenizer
 
-# -----------------------------------------------------------------
+# beer = pd.read_csv("./app/test2.csv")
+beer = pd.read_csv("/content/drive/MyDrive/web_demo/app/test2.csv") # colab
 
+# -----------------------------------------------------------------
 
 # 슬롯태깅 모델과 벡터라이저 불러오기
 
@@ -75,10 +79,18 @@ cmds = {'명령어':[],
 cmds["명령어"] = [k for k in cmds]
 # cmds["명령어"] = ['명령어', '종류', '도수', '향', '맛']
 # tag_list = ['종류', '도수', '향', '맛']
+rcm_types_li = []
+rcm_abv_li = []
+rcm_flavor_li = []
+rcm_taste_li = []
 
+# li_flavors = beer.loc[:, "flavor"].tolist()
+# li_tastes = beer.loc[:, "taste"].tolist()
+# li_abvs = beer.loc[:, "abv"].tolist()
 
 app = Flask(__name__)
 app.static_folder = 'static'
+
 
 @app.route("/")
 def home():
@@ -90,7 +102,6 @@ def home():
 ###############################################################################
 
   return render_template("index.html")
-
 
 @app.route("/get")
 def get_bot_response():
@@ -124,7 +135,8 @@ def get_bot_response():
   #slot_text = {k: "" for k in app.slot_dict}
   #app.slot_dict = {'types':[], 'abv':[], 'flavor':[], 'taste':[]}
   slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
-
+  
+  # print("최종 추천 맥주 :", intersection)
   # 슬롯태깅 실시
   for i in range(0, len(inferred_tags[0])):           
     #if slots_score[i] >= app.score_limit:      
@@ -138,6 +150,7 @@ def get_bot_response():
   print("slot_text:", slot_text)
 
   # 메뉴판의 이름과 일치하는지 검증
+  
   for k in app.slot_dict:
       for x in dic[k]:
         x = x.lower().replace(" ", "\s*")
@@ -150,7 +163,62 @@ def get_bot_response():
   filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]    
   print("empty_slot :", empty_slot)
   print("filled_slot :", filled_slot)
+  
+  # types
+  tmp_types_li = beer.loc[beer['types'] == app.slot_dict['types'][0], 'kor_name']
+  tmp_types_li = tmp_types_li.tolist()
+  rcm_types_li = tmp_types_li
+  
+  li_flavors = beer.loc[:, "flavor"].tolist()
+  li_tastes = beer.loc[:, "taste"].tolist()
+  li_abvs = beer.loc[:, "abv"].tolist()
 
+  # abv
+
+  li_abvs = {k : float(v) for k, v in zip(beer['kor_name'], li_abvs)}
+
+  for abv in app.slot_dict['abv']:
+      abv = re.sub(" ", "", abv)
+      for k in li_abvs: # 도수
+          if abv.endswith("도이상") and float(li_abvs[k]) >= float(abv[0]):
+              rcm_abv_li.append(k)
+              
+          elif abv.endswith("도이하") and float(li_abvs[k]) <= float(abv[0]):
+              rcm_abv_li.append(k)
+              
+          elif abv.endswith("도") and int(li_abvs[k]) == int(abv[0]):
+              rcm_abv_li.append(k)
+
+  # flavor
+  for k ,v in make_set(li_flavors).items():
+      for i in range(len(v)):
+          for j in range(len(app.slot_dict['flavor'])):
+              if v[i] == app.slot_dict['flavor'][j]:
+                  rcm_flavor_li.append(k)
+
+  # taste
+  for k ,v in make_set(li_tastes).items():
+      for i in range(len(v)):
+          for j in range(len(app.slot_dict['taste'])):
+              if v[i] == app.slot_dict['taste'][j]:
+                  rcm_taste_li.append(k)
+
+  rcm_types = list(set(rcm_types_li))
+  rcm_abv = list(set(rcm_abv_li))
+  rcm_flavor = list(set(rcm_flavor_li))
+  rcm_taste = list(set(rcm_taste_li))
+  
+  print("rcm_types :", rcm_types) 
+  print("rcm_abv :", rcm_abv)
+  print("rcm_flavor :", rcm_flavor)
+  print("rcm_taste :", rcm_taste)
+
+  # 최종 추천 제품
+  intersection = max((rcm_types + rcm_abv + rcm_flavor + rcm_taste), key= (rcm_types + rcm_abv + rcm_flavor + rcm_taste).count)
+  print("intersection :", intersection)
+  # def most_frequent(data):
+  #   return max(data, key=data.count)
+  
   uni_li = list(set([slot_text[k] for k in slot_text]))
   print(uni_li)
   if ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
@@ -169,9 +237,9 @@ def get_bot_response():
       message = "뭐찾니?"
     
     elif userText.strip().startswith("아니오"):
-      message = "바로 맥주 추천해줄게"
+      message = f"널 위한 맥주는 : {intersection} <br />\n맛있게 먹으렴"
       init_app(app)
-
+      
   return message
 
 def catch_slot(i, inferred_tags, text_arr, slot_text):
@@ -202,3 +270,14 @@ def chatbot_msg(msg_li):
     message = f"너가 찾는 맥주 : {msg_li} <br />\n더 고려할 사항이 있니? (예 / 아니오)"
     
     return message
+
+# 향, 맛을 dic 형태로 전환 ex) {"맥주 이름" : ["홉", "꽃"]}
+def make_set(li_slots):
+  li = []
+  for i in li_slots:
+      i = i.split(",")
+      li.append(i)
+      
+  li_slots = li
+  li_slots = {k : v for k, v in zip(beer['kor_name'], li_slots)}
+  return li_slots
