@@ -96,7 +96,11 @@ def get_bot_response():
 
     return message
 
-  
+  # text_arr = tokenizer.tokenize(userText)
+  # text_arr = [' '.join(text_arr)]
+  # input_ids, input_mask, segment_ids = bert_vectorizer.transform(text_arr)
+
+
   text_arr = tokenizer.tokenize(userText)
   input_ids, input_mask, segment_ids = bert_vectorizer.transform([" ".join(text_arr)])
 
@@ -114,13 +118,20 @@ def get_bot_response():
   slot_text = {k: "" for k in app.slot_dict}
 
 
+  # # 슬롯태깅 실시
+  # for i in range(0, len(inferred_tags[0])):
+  #   if slot_score[0][i] >= app.score_limit:
+  #     catch_slot(i, inferred_tags, text_arr, slot_text)
+  #   else:
+  #     print("something went wrong!")
+
   # 슬롯태깅 실시
   for i in range(0, len(inferred_tags[0])):     
     if slot_score[0][i] >= app.score_limit:
       if not inferred_tags[0][i] == "O":
         word_piece = re.sub("_", " ", text_arr[i])       
         slot_text[inferred_tags[0][i]] += word_piece
-      
+      #catch_slot(i, inferred_tags, text_arr, slot_text)
       #태그가 '0'가 아니면 text_arr에서 _를 지우고  slot_text에서 해당하는 태그에 단어를 담는다. 
       ##slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
     else:
@@ -136,13 +147,29 @@ def get_bot_response():
       if m:
           app.slot_dict[k].append(m.group())
 
+  
+
   empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
   filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
+
+  # if 'types' in inferred_tags[0] and ['에이', 'ᆯ', '_'] in text_arr[0]:
+  #   filled_slot[0].append('에일')
+  
+
+  # 에일 쑤셔박기!!! 잘 안되네
+  # if 'types' in inferred_tags[0] and '에일' in userText:
+  #   filled_slot[0] = '에일'
+
+  if 'types' in inferred_tags[0] and '에일' in userText:
+    app.slot_dict['taste'] = '에일'
+
+
+
 
   print(empty_slot)
   print(filled_slot)
 
-  greetings = ['안녕', '하이', 'hi', 'hello', '헤이', '뭐해']
+  greetings = ['안녕', '안녕하세요', '안뇽' '하이', 'hi', 'hello', '헤이', '뭐해']
   idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
         '잘 모르겠어', '잘 모르겠는데', '나 맥주 잘 몰라', '맥주 잘 모르는데', '모르겠네', '글쎄']
   mType = "맥주 종류는 '에일', 'IPA', '라거', '바이젠', '흑맥주'가 있어\n"
@@ -171,10 +198,11 @@ def get_bot_response():
     message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
 
   elif userText in idk:
-    message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을 입력해줘'
+    message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을, 아니라면 "x"를 입력해줘'
 
   elif userText == '설명' : 
     message = answer
+    init_app(app)
 
   elif userText in endings:
     message = 'Okay bye...'
@@ -186,6 +214,7 @@ def get_bot_response():
   # 사용자가 추가 조건을 없다고 하고 태깅 슬롯이 1개 이상이면 추천 바로 시작
   elif userText in no and len(filled_slot)>0 : 
     message = '맥주 추천 시작!!'
+
 
   # 태깅된 슬롯이 4개
   elif ('종류' in filled_slot and '도수' in filled_slot and '향' in filled_slot and '맛' in filled_slot) :
@@ -526,13 +555,12 @@ def get_bot_response():
       message = '맥주 추천 시작!!'
 
 
-  
-
-
-  
-
-  
   return message
+
+
+def init_app(app):
+  app.slot_dict = {'types' : [], 'abv' : [], 'flavor' : [], 'taste' : []}
+
 
 
 ############################### TODO ##########################################
