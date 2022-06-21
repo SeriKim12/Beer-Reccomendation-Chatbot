@@ -9,9 +9,11 @@ sys.path.append('/content/drive/MyDrive/codes/codes/')
 from models.bert_slot_model import BertSlotModel
 from to_array.bert_to_array import BERTToArray
 from to_array.tokenizationK import FullTokenizer
+import matplotlib.pyplot as plt
 
 # -----------------------------------------------------------------
-
+# 맥주 이름 읽어오기
+beer_menu = pd.read_csv("beer_menu.csv")
 
 # 슬롯태깅 모델과 벡터라이저 불러오기
 
@@ -99,6 +101,8 @@ no = ['아니', '괜찮아', '아니아니', 'ㄴㄴ', '그냥 추천해줘', '�
 endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
 
 
+
+
 app = Flask(__name__)
 app.static_folder = 'static'
 
@@ -156,8 +160,6 @@ def get_bot_response():
       m = re.search(x, slot_text[k])
       if m:
         app.slot_dict[k].append(m.group())
-      else : 
-        message = '네가 찾는 건 없네ㅠㅠ'
   print("app.slot_dict :", app.slot_dict)           
 
   #options = {'beer_types':'종류', 'beer_abv':'도수', 'beer_flavor':'향', 'beer_taste':'맛'}
@@ -246,6 +248,30 @@ def get_bot_response():
         return last_msg
       
   return message
+
+  li = []
+  for i in beer_menu.index :
+    # 종류
+    for j in range(len(slot_dict['types'])):
+      if beer_menu['types'][i] == slot_dict['types'][j]:
+          li.append(beer_menu['kor_name'][i])
+
+  print(li)
+  image(app, li)
+
+
+  
+# 맥주 이름으로 경로 잡아서 이미지 띄우기... 아직 구현 x
+def image(app, li):
+  for i in range(len(li)):
+    showBeer = plt.imread(f'/content/drive/MyDrive/dailyBeerImage/{i}.jpg')
+    beerimage = plt.imshow(showBeer)
+    message1 = '네게 추천할 맥주는 바로!'
+    beermessage = i
+    message = message1 + beermessage + beerimage
+    return message
+          
+
     
 def catch_slot(i, inferred_tags, text_arr, slot_text):
   if not inferred_tags[0][i] == "O":
