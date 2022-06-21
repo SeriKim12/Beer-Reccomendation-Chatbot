@@ -209,32 +209,40 @@ def get_bot_response():
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
+    return message
 
   elif userText in yes:
     message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
+    return message
 
   elif userText in idk:
     message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을, 아니라면 "x"를 입력해줘'
+    return message
 
   elif userText == '설명' : 
     message = answer
+    return message
     init_app(app)
 
   elif userText in endings:
     message = 'Okay bye...'
+    return message
 
   # 태깅된 슬롯이 0개
   elif ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
     message = '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??'
+    return message
 
   # 사용자가 추가 조건을 없다고 하고 태깅 슬롯이 1개 이상이면 추천 바로 시작
   elif userText in no and len(filled_slot)>0 : 
     message = '맥주 추천 시작!!'
+    return message
 
 
   # 태깅된 슬롯이 4개
   elif ('종류' in filled_slot and '도수' in filled_slot and '향' in filled_slot and '맛' in filled_slot) :
     message = '라져! 네게 딱 맞을 맥주를 찾고 있는 중...'
+    return message
 
   # 태깅된 슬롯이 3개 : 종류도수향, 종류도수맛, 도수맛향
   elif ('종류' in filled_slot and '도수' in filled_slot and '향' in filled_slot) and ('맛' in empty_slot):
@@ -243,6 +251,8 @@ def get_bot_response():
       message = f'{app.slot_dict["taste"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
     elif userText in no :
       message = '맥주 추천 시작!!'
+    
+    return message
 
   elif ('종류' in filled_slot and '도수' in filled_slot and '맛' in filled_slot) and ('향' in empty_slot):
     message = f'{app.slot_dict["types"]}, {app.slot_dict["abv"]}, {app.slot_dict["taste"]} 말이지? 원하는 향은 있어?'
@@ -250,6 +260,8 @@ def get_bot_response():
       message = f'{app.slot_dict["flavor"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
     elif userText in no :
       message = '맥주 추천 시작!!'
+    
+    return message
 
 
   elif ('맛' in filled_slot and '도수' in filled_slot and '향' in filled_slot) and ('종류' in empty_slot):
@@ -258,6 +270,8 @@ def get_bot_response():
       message = f'{app.slot_dict["types"]}까지 추가해서 너한테 추천할 맥주를 찾고 있는 중...'
     elif userText in no :
       message = '맥주 추천 시작!!'
+
+    return message
 
 
   # 태깅된 슬롯이 2개 : 종류도수, 종류향, 종류맛, 도수향, 도수맛, 향맛
@@ -281,6 +295,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
   # 종류 향
   elif ('종류' in filled_slot and '향' in filled_slot) and ('도수' in empty_slot and '맛' in empty_slot):
@@ -303,6 +318,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
   # 종류 맛
@@ -326,6 +342,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
   # 도수 향
@@ -349,6 +366,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
   # 도수 맛
@@ -372,6 +390,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
   # 향 맛
@@ -395,6 +414,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
   # 태깅된 슬롯이 1개
@@ -439,6 +459,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
 
@@ -483,6 +504,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
  
 
 
@@ -527,6 +549,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
   elif ('맛' in filled_slot) and ('도수' in empty_slot and '향' in empty_slot and '종류' in empty_slot):
@@ -569,6 +592,7 @@ def get_bot_response():
     # 추가를 아예 안했을 때
     elif userText in no :
       message = '맥주 추천 시작!!'
+    return message
 
 
   return message
