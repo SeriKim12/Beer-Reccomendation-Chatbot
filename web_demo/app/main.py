@@ -69,6 +69,35 @@ cmds = {'명령어' : [], '종류' : types, '도수' : abv, '향' : flavor, '맛
 
 cmds['명령어'] = [k for k in cmds]
 
+
+greetings = ['안녕', '안녕하세요', '안뇽' '하이', 'hi', 'hello', '헤이', '뭐해']
+idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
+      '잘 모르겠어', '잘 모르겠는데', '나 맥주 잘 몰라', '맥주 잘 모르는데', '모르겠네', '글쎄']
+mType = "맥주 종류는 '에일', 'IPA', '라거', '바이젠', '흑맥주'가 있어\n"
+ale = "에일은 풍부한 향과 진한 색이 특징이야.\n" 
+ipa = "IPA는 인디아 페일에일의 준말로, 맛이 강하고 쌉쌀한 편이지.\n" 
+lager = "라거는 탄산이 많고 가볍고 청량해.\n" 
+dark = "흑맥주는 색이 까맣고 향미가 진하고.\n"
+mType2 = ale + ipa + lager + dark
+mAbv = "도수는 3도부터 8도까지 있단다.\n"
+mFlavor = "향은 '과일'향, '홉'향, '꽃'향, '상큼한' 향, '커피'향, '스모키한' 향 등이 있어.\n"
+mTaste = "맛은 '단' 맛, '달지 않은' 맛, '씁쓸한' 맛, '쓰지 않은' 맛,'신' 맛, '상큼한' 맛, '시지 않은' 맛,'과일' 맛, '구수한' 맛 등이 있지.\n"        
+answer = mType + mType2 + mAbv + mFlavor + mTaste
+
+abvH = ['도수 높은', '도수높은', '도수 높고', '도수높고', '도수 쎈', '도수쎈', '강한 도수', '강한도수',
+        '도수가 높고', '도수가 쎈', '도수는 높고', '도수는 높은', '도수쎄고']
+
+abvL = ['도수 낮은', '도수낮은', '도수 낮고', '도수낮고', '도수 약한', '도수약한', '약한 도수', '약한도수',
+        '도수가 낮은', '도수가 약한', '도수높은', '도수쎈']
+
+yes = ['그래', '좋아', '좋지', '당연하지', '물론', '응', '부탁해', '네', '어', 'ㅇ']
+
+no = ['아니', '괜찮아', '아니아니', 'ㄴㄴ', '그냥 추천해줘', '없어']
+
+endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
+
+
+
 app = Flask(__name__)
 app.static_folder = 'static'
 
@@ -79,7 +108,7 @@ def home():
 # 슬롯 사전 만들기
     #app.slot_dict = {'a_slot': None, 'b_slot':None}
   app.slot_dict = {'types' : [], 'abv' : [], 'flavor' : [], 'taste' : []}
-  app.score_limit = 0.7
+  app.score_limit = 0.8
 ###############################################################################
 
   return render_template("index.html")
@@ -96,10 +125,7 @@ def get_bot_response():
 
     return message
 
-  # text_arr = tokenizer.tokenize(userText)
-  # text_arr = [' '.join(text_arr)]
-  # input_ids, input_mask, segment_ids = bert_vectorizer.transform(text_arr)
-
+  message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
 
   text_arr = tokenizer.tokenize(userText)
   input_ids, input_mask, segment_ids = bert_vectorizer.transform([" ".join(text_arr)])
@@ -118,22 +144,13 @@ def get_bot_response():
   slot_text = {k: "" for k in app.slot_dict}
 
 
-  # # 슬롯태깅 실시
-  # for i in range(0, len(inferred_tags[0])):
-  #   if slot_score[0][i] >= app.score_limit:
-  #     catch_slot(i, inferred_tags, text_arr, slot_text)
-  #   else:
-  #     print("something went wrong!")
-
-  # 슬롯태깅 실시
+  # 슬롯태깅 실시 : 태그가 '0'가 아니면 text_arr에서 _를 지우고  slot_text에서 해당하는 태그에 단어를 담는다. 
   for i in range(0, len(inferred_tags[0])):     
     if slot_score[0][i] >= app.score_limit:
       if not inferred_tags[0][i] == "O":
         word_piece = re.sub("_", " ", text_arr[i])       
         slot_text[inferred_tags[0][i]] += word_piece
-      #catch_slot(i, inferred_tags, text_arr, slot_text)
-      #태그가 '0'가 아니면 text_arr에서 _를 지우고  slot_text에서 해당하는 태그에 단어를 담는다. 
-      ##slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
+        #slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
     else:
       print("something went wrong!")
   print("slot_text:", slot_text)
@@ -147,49 +164,48 @@ def get_bot_response():
       if m:
           app.slot_dict[k].append(m.group())
 
-  
-
-  empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
-  filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
-
-  # if 'types' in inferred_tags[0] and ['에이', 'ᆯ', '_'] in text_arr[0]:
-  #   filled_slot[0].append('에일')
-  
-
-  # 에일 쑤셔박기!!! 잘 안되네
-  # if 'types' in inferred_tags[0] and '에일' in userText:
-  #   filled_slot[0] = '에일'
-
+  # 에일 쑤셔박기!!!
   if 'types' in inferred_tags[0] and '에일' in userText:
     app.slot_dict['taste'] = '에일'
 
+  # 도수 높은/도수 낮은 : 슬롯 단어에 없지만 일상적으로 하는 말이 입력됐을 경우
+  # for i in abvH :
+  #   if i in userText:
+  #     i for i in abvH if i in userText
+  # elif 'abv' in inferred_tags[0] and len([i for i in abvH if i in userText])>0:
+  #   app.slot_dict['abv'] = '6도 이상'
 
+  # elif 'abv' in inferred_tags[0] and len([i for i in abvL if i in userText])>0:
+  #   app.slot_dict['abv'] = '4도 이하'
 
+  # 슬롯으로 잡지만 사실 슬롯에 해당하는 단어가 아닌 경우
+  elif 'types' in inferred_tags[0] and userText not in types:
+    app.slot_dict['types'] = None
+    message = '네가 찾는 건 없네ㅠㅠ' + mType
+    return message
+  
+  elif 'abv' in inferred_tags[0] and userText not in abv:
+    app.slot_dict['abv'] = None
+    message = '네가 찾는 건 없네ㅠㅠ' + mAbv
+    return message
+
+  elif 'taste' in inferred_tags[0] and userText not in taste:
+    app.slot_dict['taste'] = None
+    message = '네가 찾는 건 없네ㅠㅠ' + mTaste
+    return message
+
+  elif 'flavor' in inferred_tags[0] and userText not in flavor:
+    app.slot_dict['flavor'] = None
+    message = '네가 찾는 건 없네ㅠㅠ' + mFlavor
+    return message
+  
+  empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
+  filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]
 
   print(empty_slot)
   print(filled_slot)
 
-  greetings = ['안녕', '안녕하세요', '안뇽' '하이', 'hi', 'hello', '헤이', '뭐해']
-  idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
-        '잘 모르겠어', '잘 모르겠는데', '나 맥주 잘 몰라', '맥주 잘 모르는데', '모르겠네', '글쎄']
-  mType = "맥주 종류는 '에일', 'IPA', '라거', '바이젠', '흑맥주'가 있어\n"
-  ale = "에일은 풍부한 향과 진한 색이 특징이야.\n" 
-  ipa = "IPA는 인디아 페일에일의 준말로, 맛이 강하고 쌉쌀한 편이지.\n" 
-  lager = "라거는 탄산이 많고 가볍고 청량해.\n" 
-  dark = "흑맥주는 색이 까맣고 향미가 진해.\n"
-  mType2 = ale + ipa + lager + dark
-  mAbv = "도수는 3도부터 8도까지 다양해.\n"
-  mFlavor = "향은 '과일'향, '홉'향, '꽃'향, '상큼한' 향, '커피'향, '스모키한' 향 등이 있어.\n"
-  mTaste = "맛은 '단' 맛, '달지 않은' 맛, '씁쓸한' 맛, '쓰지 않은' 맛,'신' 맛, '상큼한' 맛, '시지 않은' 맛,'과일' 맛, '구수한' 맛 등이 있지.\n"        
-  answer = mType + mType2 + mAbv + mFlavor + mTaste
   
-  yes = ['그래', '좋아', '좋지', '당연하지', '물론', '응', '부탁해', '네', '어', 'ㅇ']
-
-  no = ['아니', '괜찮아', '아니아니', 'ㄴㄴ', '그냥 추천해줘', '없어']
-
-  endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
-
-  message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
