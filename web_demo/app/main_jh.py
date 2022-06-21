@@ -94,103 +94,92 @@ def home():
 
 @app.route("/get")
 def get_bot_response():
-    userText = request.args.get('msg').strip() # 사용자가 입력한 문장
-    
-    if userText[0] == "!":
-      try:
-        li = cmds[userText[1:]]
-        message = "<br />\n".join(li)
-      except:
-        message = "입력한 명령어가 존재하지 않습니다."
+  userText = request.args.get('msg').strip() # 사용자가 입력한 문장
+  
+  if userText[0] == "!":
+    try:
+      li = cmds[userText[1:]]
+      message = "<br />\n".join(li)
+    except:
+      message = "입력한 명령어가 존재하지 않습니다."
 
-      return message
-
-    text_arr = tokenizer.tokenize(userText)
-    input_ids, input_mask, segment_ids = bert_to_array.transform([" ".join(text_arr)])
-
-    # 예측
-    with graph.as_default():
-      with sess.as_default():
-        inferred_tags, slots_score = model.predict_slots(        
-          [input_ids, input_mask, segment_ids], tags_to_array
-        )
-
-    # 결과 체크
-    print("text_arr:", text_arr) 
-    print("inferred_tags:", inferred_tags[0])
-    print("slots_score:", slots_score[0])   
-
-    # 슬롯에 해당하는 텍스트를 담을 변수 설정
-    #slot_text = {k: "" for k in app.slot_dict}
-    #app.slot_dict = {'types':[], 'abv':[], 'flavor':[], 'taste':[]}
-    slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
-
-    # 슬롯태깅 실시
-    for i in range(0, len(inferred_tags[0])):           
-      #if slots_score[i] >= app.score_limit:      
-      if slots_score[0][i] >= app.score_limit:
-        # if not inferred_tags[0][i] == "O":
-        #   word_piece = re.sub("_", "", text_arr[i])       
-        #   slot_text[inferred_tags[0][i]] += word_piece
-        catch_slot(i, inferred_tags, text_arr, slot_text)
-        #태그가 '0'가 아니면 text_arr에서 _를 지우고  slot_text에서 해당하는 태그에 단어를 담는다. 
-        ##slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
-      else:
-        print("something went wrong!")
-    print("slot_text:", slot_text)
-
-    # 메뉴판의 이름과 일치하는지 검증
-    for k in app.slot_dict:
-    # k : 'types','abv','flavor','taste' 
-        for x in dic[k]:
-        # {'types': [types], 'abv': [abv], 'flavor': [flavor], 'taste': [taste]}  
-          x = x.lower().replace(" ", "\s*")
-          m = re.search(x, slot_text[k])
-          if m:
-            app.slot_dict[k].append(m.group())
-    print("app.slot_dict :", app.slot_dict)           
-
-    #options = {'beer_types':'종류', 'beer_abv':'도수', 'beer_flavor':'향', 'beer_taste':'맛'}
-    empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
-    filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]    
-    print("empty_slot :", empty_slot)
-    print("filled_slot :", filled_slot)
-
-    if ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
-      message = '맥주의 종류, 도수, 향, 맛을 넣어서 다시 입력해주세요'   
-    
-    if ('종류' in filled_slot or '도수' in filled_slot or '향' in filled_slot or '맛' in filled_slot):
-        
-        tmp_li = []
-        
-        for i in range(0, len(inferred_tags[0])):
-            if not inferred_tags[0][i] == "O":
-                tmp_li.append(slot_text[inferred_tags[0][i]])
-        
-        msg_li = list(set(tmp_li))
-        
-        if len(msg_li) == 1:
-            message = chatbot_msg(msg_li)
-            
-        elif len(msg_li) == 2:
-            message = chatbot_msg(msg_li)   
-               
-        elif len(msg_li) == 3:
-            message = chatbot_msg(msg_li)
-            
-        elif len(msg_li) == 4: # 종류, 도수, 향, 맛
-            message = chatbot_msg(msg_li)
-            
-        if userText.strip().startswith("예"):
-            ask_msg = "뭐찾니?"
-            return ask_msg
-
-        elif userText.strip().startswith("아니오"):
-            last_msg = "바로 맥주 추천해줄게"
-            return last_msg
-        
     return message
+
+  text_arr = tokenizer.tokenize(userText)
+  input_ids, input_mask, segment_ids = bert_to_array.transform([" ".join(text_arr)])
+
+  # 예측
+  with graph.as_default():
+    with sess.as_default():
+      inferred_tags, slots_score = model.predict_slots(        
+        [input_ids, input_mask, segment_ids], tags_to_array
+      )
+
+  # 결과 체크
+  print("text_arr:", text_arr) 
+  print("inferred_tags:", inferred_tags[0])
+  print("slots_score:", slots_score[0])   
+
+  # 슬롯에 해당하는 텍스트를 담을 변수 설정
+  #slot_text = {k: "" for k in app.slot_dict}
+  #app.slot_dict = {'types':[], 'abv':[], 'flavor':[], 'taste':[]}
+  slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
+
+  # 슬롯태깅 실시
+  for i in range(0, len(inferred_tags[0])):           
+    #if slots_score[i] >= app.score_limit:      
+    if slots_score[0][i] >= app.score_limit:
+      catch_slot(i, inferred_tags, text_arr, slot_text)
+      #태그가 '0'가 아니면 text_arr에서 _를 지우고  slot_text에서 해당하는 태그에 단어를 담는다. 
+      ##slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
+    else:
+      print("something went wrong!")
+  print("slot_text:", slot_text)
+
+  # 메뉴판의 이름과 일치하는지 검증
+  for k in app.slot_dict:
+  # k : 'types','abv','flavor','taste' 
+      for x in dic[k]:
+      # {'types': [types], 'abv': [abv], 'flavor': [flavor], 'taste': [taste]}  
+        x = x.lower().replace(" ", "\s*")
+        m = re.search(x, slot_text[k])
+        if m:
+          app.slot_dict[k].append(m.group())
+  print("app.slot_dict :", app.slot_dict)           
+
+  #options = {'beer_types':'종류', 'beer_abv':'도수', 'beer_flavor':'향', 'beer_taste':'맛'}
+  empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
+  filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]    
+  print("empty_slot :", empty_slot)
+  print("filled_slot :", filled_slot)
+
+  # for k in slot_text:
+  uni_li = list(set([slot_text[k] for k in slot_text]))
+  print(uni_li)
+  # if uni_li[0] == '':
+  if ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
+    message = '맥주의 종류, 도수, 향, 맛을 넣어서 다시 입력해주세요'   
+  
+  if ('종류' in filled_slot or '도수' in filled_slot or '향' in filled_slot or '맛' in filled_slot):
+    tmp_li = []
+    for i in range(0, len(inferred_tags[0])):
+        if not inferred_tags[0][i] == "O":
+            tmp_li.append(slot_text[inferred_tags[0][i]])
     
+    msg_li = list(set(tmp_li))
+    message = chatbot_msg(msg_li)    
+            
+    if userText.strip().startswith("예"):
+      message = "뭐찾니?"
+    
+    elif userText.strip().startswith("아니오"):
+      # last_msg = "바로 맥주 추천해줄게"
+      # return last_msg
+      message = "바로 맥주 추천해줄게"
+      init_app(app)
+            
+  return message
+
 def catch_slot(i, inferred_tags, text_arr, slot_text):
   if not inferred_tags[0][i] == "O":
     word_piece = re.sub("_", " ", text_arr[i])
@@ -217,5 +206,7 @@ def chatbot_msg(msg_li):
     
     msg_li = list(set(msg_li))
     message = f"너가 찾는 맥주 : {msg_li} <br />\n더 고려할 사항이 있니? (예 / 아니오)"
-    message = "너가 찾는 맥주 : {} <br />\n더 고려할 사항이 있니? (예 / 아니오)".format(msg_li)
+    # message = "너가 찾는 맥주 : {} <br />\n더 고려할 사항이 있니? (예 / 아니오)".format(msg_li)
+    
+    # ask_opt = True
     return message
