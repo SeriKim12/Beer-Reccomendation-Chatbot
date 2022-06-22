@@ -1,0 +1,11 @@
+<!doctype html>
+<html>
+  <head>
+  </head>
+  <body>
+    <DIV style ="text-align:center";>
+    {% if True %}
+    <img src="{{ url_for('static', filename=image_file) }} " style = " width : 200px; height : 300px; border-radius : 10%; overflow: hidden; object-fit: cover; padding-top: 10px;padding-bottom: 10px">
+    {% endif %}
+  </body>
+</html>
