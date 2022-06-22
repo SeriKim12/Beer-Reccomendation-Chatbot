@@ -300,7 +300,8 @@ def get_bot_response():
   for k ,v in make_set(li_tastes).items():
     for i in range(len(v)):
       for j in range(len(app.slot_dict['taste'])):
-        if v[i] == app.slot_dict['taste'][j]:
+        #if v[i] == app.slot_dict['taste'][j]:
+        if app.slot_dict['taste'][j] in v[i]:
           rcm_taste_li.append(k)
 
   rcm_types = list(set(rcm_types_li))
@@ -380,25 +381,6 @@ def get_bot_response():
     return message
 
 
-# 추천 맥주 이미지 보여주기
-# def handle_image(imgfilepath):
-#   #이미지 읽어오기
-#   img = cv2.imread(imgfilepath, cv2.IMREAD_COLOR) #사진을 컬러로 읽어오기
-#   return img
-
-
-# def simpleImageComponent(imageUrl):
-#   return {"simpleImage": {"imageUrl": imageUrl}}
-
-# def simpleImageComponent(imageUrl):
-#   plt.imread()
-
-
-# def showImg():
-#   return render_template('showImg.html')
-
-# def showImg():
-#   return render_template('showImg.html', image_file='image/name.?')
 
           
 # 종류, 향, 맛 슬롯 단어에 해당하는 맥주를 dic 형태로 전환 ex) {"맥주 이름" : ["홉", "꽃"]}
