@@ -234,24 +234,24 @@ def get_bot_response():
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
-    #return message
+    return message
 
   elif userText in yes:
     message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
-    #return message
+    return message
 
   elif userText in idk:
     message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을, 아니라면 "x"를 입력해줘'
-    #return message
+    return message
 
   elif userText == '설명' : 
     message = answer
-    #return message
+    return message
 
   elif userText in endings:
     message = 'Okay bye...'
     init_app(app)
-    #return message
+    return message
 
 
   # 추천할 슬롯별 맥주 이름 목록을 담을 빈 리스트 생성
