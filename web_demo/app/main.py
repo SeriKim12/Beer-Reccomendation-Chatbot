@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request
 from flask_ngrok import run_with_ngrok
 import tensorflow as tf
-import os, pickle, re, sys
+import os, pickle, re, sys, random
 import pandas as pd
 
 sys.path.append('/content/drive/MyDrive/codes/codes/')
@@ -97,7 +97,8 @@ yes = ['그래', '좋아', '좋지', '당연하지', '물론', '응', '부탁해
 no = ['아니', '괜찮아', '아니아니', 'ㄴㄴ', '그냥 추천해줘', '없어']
 endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어', '안해', 'go away']
 
-
+noSlot = ['맥주 마시고 싶당', '맥쥬 맥쥬', '맥주 한 잔이면 스트레스가 싸악 가셔요', 
+            '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??']
 
 
 app = Flask(__name__)
@@ -318,7 +319,7 @@ def get_bot_response():
   print("intersection :", intersection)
 
   if ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
-    message = '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??'   
+    message = random.choice(noSlot)  
   
   if ('종류' in filled_slot or '도수' in filled_slot or '향' in filled_slot or '맛' in filled_slot):
     tmp_li = []
