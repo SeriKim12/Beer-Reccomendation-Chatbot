@@ -234,24 +234,24 @@ def get_bot_response():
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
-    return message
+    #return message
 
   elif userText in yes:
     message = '원하는 맥주에 대해 알려줘~~ 종류는? 도수는? 향은? 맛은? 어떤 게 좋아??~?~~~'
-    return message
+    #return message
 
   elif userText in idk:
     message = '혹시 맥주 옵션에 대한 설명이 필요하다면 "설명"을, 아니라면 "x"를 입력해줘'
-    return message
+    #return message
 
   elif userText == '설명' : 
     message = answer
-    return message
+    #return message
 
   elif userText in endings:
     message = 'Okay bye...'
     init_app(app)
-    return message
+    #return message
 
 
   # 추천할 슬롯별 맥주 이름 목록을 담을 빈 리스트 생성
@@ -377,7 +377,7 @@ def get_bot_response():
       init_app(app)
       return last_msg
 
-  return message
+    return message
 
 
 # 추천 맥주 이미지 보여주기
@@ -414,11 +414,9 @@ def make_set(li_slots):
     
 def catch_slot(i, inferred_tags, text_arr, slot_text):
   if not inferred_tags[0][i] == "O":
-    #text_arr = [i for i in text_arr if i != '_']
     word_piece = re.sub("_", "", text_arr[i])
-    #word_piece = join_jamos(word_piece) 에일은 에일대로 안되고 다른 것까지 안됨...
     slot_text[inferred_tags[0][i]] += word_piece
-    #text_arr = join_jamos(text_arr)
+    
 # inffered_tags = ['O', 'abv', 'abv', 'O', 'type', 'type', 'type', 'O', 'O', 'O', 'O', 'O', 'flavor', 'flavor', 'flavor', 'flavor', 'O', 'O']
 #text_arr = ['나는_', '7', '도_', '넘는_', '흑', '맥', '주로_', '주', '문', '하고_', '싶', '어_', '스', '모', '키', '한_', '걸', '로_']
 #slot_text = {'beer_abv': '7도', 'beer_flavor': '', 'beer_taste': '', 'beer_types': '흑맥주'}
