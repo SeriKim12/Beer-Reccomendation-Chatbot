@@ -161,13 +161,23 @@ def get_bot_response():
   for k in app.slot_dict:  # k : 'types','abv','flavor','taste' 
     for x in dic[k]:
     # {'types': [types], 'abv': [abv], 'flavor': [flavor], 'taste': [taste]}  
-      x = x.lower().replace(" ", "\s*")
+      x = x.lower().replace(" ", "\s*") # 대문자를 소문자로 바꾸고? 공백을 
       m = re.search(x, slot_text[k])
       if m:
         app.slot_dict[k].append(m.group())
-  print("app.slot_dict :", app.slot_dict)           
 
-  # for k in app.slot_dict:
+
+  # 안~~ 인 형용사를 re.search가 단/쓴/신 등의 원본 단어도 찾아버려서
+  taste_v = ['안 쓴', '안쓴', '안 신', '안신', '안단', '안 단']
+  for i in taste_v :
+    if i in slot_text['taste'] :
+      del(app.slot_dict['taste'][0])
+
+  print("app.slot_dict :", app.slot_dict)     
+  
+        
+
+  # for k in app.slot_dict: 오류가 나서 안됨...
   #   for x in dic[k]:
   #     x = x.lower().replace(" ", "\s*")
   #     m = re.search(x, slot_text[k])
@@ -177,15 +187,20 @@ def get_bot_response():
   # print("app.slot_dict :", app.slot_dict)
 
 
-
-
   #options = {'beer_types':'종류', 'beer_abv':'도수', 'beer_flavor':'향', 'beer_taste':'맛'}
   empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
   filled_slot = [options[k] for k in app.slot_dict if app.slot_dict[k]]    
+
+
+  # # 에일 쑤셔박기 2탄
+  # for i in userText:
+  #   #if i == '에일' : #and 'types' in inferred_tags:
+  #   if slot_text['types'] == '에일':
+  #     app.slot_dict['types'] = ['에일']
+  #     filled_slot.append('종류')
+
   print("empty_slot :", empty_slot)
   print("filled_slot :", filled_slot)
-
-
 
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
