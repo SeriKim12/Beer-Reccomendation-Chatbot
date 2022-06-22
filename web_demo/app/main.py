@@ -13,7 +13,12 @@ import matplotlib.pyplot as plt
 
 # -----------------------------------------------------------------
 # 맥주 이름 읽어오기
-beer_menu = pd.read_csv("beer_menu.csv")
+beer = pd.read_csv("/content/drive/MyDrive/codes/web_demo/app/test2.csv")
+
+rcm_types_li = []
+rcm_abv_li = []
+rcm_flavor_li = []
+rcm_taste_li = []
 
 # 슬롯태깅 모델과 벡터라이저 불러오기
 
@@ -168,6 +173,8 @@ def get_bot_response():
   print("empty_slot :", empty_slot)
   print("filled_slot :", filled_slot)
 
+
+
   if userText in greetings:
     message = '헤이~~~ 맥주 한 잔 하실??'
     return message
@@ -188,7 +195,59 @@ def get_bot_response():
     message = 'Okay bye...'
     init_app(app)
     return message
+  # types
+  tmp_types_li = beer.loc[beer['types'] == app.slot_dict['types'][0], 'kor_name']
+  tmp_types_li = tmp_types_li.tolist()
+  rcm_types_li = tmp_types_li
+  
+  li_flavors = beer.loc[:, "flavor"].tolist()
+  li_tastes = beer.loc[:, "taste"].tolist()
+  li_abvs = beer.loc[:, "abv"].tolist()
 
+  # abv
+
+  li_abvs = {k : float(v) for k, v in zip(beer['kor_name'], li_abvs)}
+
+  for abv in app.slot_dict['abv']:
+      abv = re.sub(" ", "", abv)
+      for k in li_abvs: # 도수
+          if abv.endswith("도이상") and float(li_abvs[k]) >= float(abv[0]):
+              rcm_abv_li.append(k)
+              
+          elif abv.endswith("도이하") and float(li_abvs[k]) <= float(abv[0]):
+              rcm_abv_li.append(k)
+              
+          elif abv.endswith("도") and int(li_abvs[k]) == int(abv[0]):
+              rcm_abv_li.append(k)
+
+  # flavor
+  for k ,v in make_set(li_flavors).items():
+      for i in range(len(v)):
+          for j in range(len(app.slot_dict['flavor'])):
+              if v[i] == app.slot_dict['flavor'][j]:
+                  rcm_flavor_li.append(k)
+
+  # taste
+  for k ,v in make_set(li_tastes).items():
+      for i in range(len(v)):
+          for j in range(len(app.slot_dict['taste'])):
+              if v[i] == app.slot_dict['taste'][j]:
+                  rcm_taste_li.append(k)
+
+  rcm_types = list(set(rcm_types_li))
+  rcm_abv = list(set(rcm_abv_li))
+  rcm_flavor = list(set(rcm_flavor_li))
+  rcm_taste = list(set(rcm_taste_li))
+  
+  print("rcm_types :", rcm_types) 
+  print("rcm_abv :", rcm_abv)
+  print("rcm_flavor :", rcm_flavor)
+  print("rcm_taste :", rcm_taste)
+
+  # 최종 추천 제품
+  intersection = max((rcm_types + rcm_abv + rcm_flavor + rcm_taste), key= (rcm_types + rcm_abv + rcm_flavor + rcm_taste).count)
+  print("intersection :", intersection)
+  
   if ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
     message = '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??'   
   
@@ -212,7 +271,7 @@ def get_bot_response():
         message = chatbot_msg(msg_li)
         
     elif len(msg_li) == 4: # 종류, 도수, 향, 맛
-        message = chatbot_msg(msg_li) + '라져! 네게 딱 맞을 맥주를 찾고 있는 중...'
+        message = chatbot_msg(msg_li) + f'라져! 널 위한 맥주는 바로!! {intersection}!!'
         init_app(app)
         return message
 
@@ -243,35 +302,46 @@ def get_bot_response():
         return ask_msg
 
     elif userText in no:
-        last_msg = "라져! 네게 딱 맞을 맥주를 찾고 있는 중..."
+        last_msg = f"알았어! 널 위한 맥주는 바로!! {intersection}!!"
         init_app(app)
         return last_msg
       
+  
+
   return message
 
-  li = []
-  for i in beer_menu.index :
-    # 종류
-    for j in range(len(slot_dict['types'])):
-      if beer_menu['types'][i] == slot_dict['types'][j]:
-          li.append(beer_menu['kor_name'][i])
+  # li = []
+  # for i in beer_menu.index :
+  #   # 종류
+  #   for j in range(len(slot_dict['types'])):
+  #     if beer_menu['types'][i] == slot_dict['types'][j]:
+  #         li.append(beer_menu['kor_name'][i])
 
-  print(li)
-  image(app, li)
+  # print(li)
+  # image(app, li)
 
 
   
-# 맥주 이름으로 경로 잡아서 이미지 띄우기... 아직 구현 x
-def image(app, li):
-  for i in range(len(li)):
-    showBeer = plt.imread(f'/content/drive/MyDrive/dailyBeerImage/{i}.jpg')
-    beerimage = plt.imshow(showBeer)
-    message1 = '네게 추천할 맥주는 바로!'
-    beermessage = i
-    message = message1 + beermessage + beerimage
-    return message
+# # 맥주 이름으로 경로 잡아서 이미지 띄우기... 아직 구현 x
+# def image(app, li):
+#   for i in range(len(li)):
+#     showBeer = plt.imread(f'/content/drive/MyDrive/dailyBeerImage/{i}.jpg')
+#     beerimage = plt.imshow(showBeer)
+#     message1 = '네게 추천할 맥주는 바로!'
+#     beermessage = i
+#     message = message1 + beermessage + beerimage
+#     return message
           
-
+# 향, 맛을 dic 형태로 전환 ex) {"맥주 이름" : ["홉", "꽃"]}
+def make_set(li_slots):
+    li = []
+    for i in li_slots:
+        i = i.split(",")
+        li.append(i)
+        
+    li_slots = li
+    li_slots = {k : v for k, v in zip(beer['kor_name'], li_slots)}
+    return li_slots
     
 def catch_slot(i, inferred_tags, text_arr, slot_text):
   if not inferred_tags[0][i] == "O":
