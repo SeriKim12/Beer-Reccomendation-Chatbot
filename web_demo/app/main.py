@@ -9,16 +9,11 @@ sys.path.append('/content/drive/MyDrive/codes/codes/')
 from models.bert_slot_model import BertSlotModel
 from to_array.bert_to_array import BERTToArray
 from to_array.tokenizationK import FullTokenizer
-import matplotlib.pyplot as plt
+from hangul_utils import join_jamos
 
 # -----------------------------------------------------------------
 # 맥주 이름 읽어오기
 beer = pd.read_csv("/content/drive/MyDrive/codes/web_demo/app/test2.csv")
-
-rcm_types_li = []
-rcm_abv_li = []
-rcm_flavor_li = []
-rcm_taste_li = []
 
 # 슬롯태깅 모델과 벡터라이저 불러오기
 
@@ -74,27 +69,24 @@ dic = {i:globals()[i] for i in options}
 # globals()[원하는 변수 이름] = 변수에 할당할 값 : 변수 여러개 동시 생성
 # dic = {'types': types, 'abv': abv, 'flavor': flavor, 'taste': taste}
 
-cmds = {'명령어':[],
-        '종류':types,
-        '도수':abv,
-        '향':flavor,
-        '맛':taste}
+cmds = {'명령어':[], '종류':types, '도수':abv, '향':flavor, '맛':taste}
 cmds["명령어"] = [k for k in cmds]
 # cmds["명령어"] = ['명령어', '종류', '도수', '향', '맛']
+
 tag_list = ['종류', '도수', '향', '맛']
 
 greetings = ['안녕', '안녕하세요', '안뇽' '하이', 'hi', 'hello', '헤이', '뭐해']
 idk = ['몰라', '설명해줘', '뭐야', '모르는데', '모르겠어', '알려줘', '뭔데', '몰라요', '알려주세요', '모르겠어요', '모릅니다',
       '잘 모르겠어', '잘 모르겠는데', '나 맥주 잘 몰라', '맥주 잘 모르는데', '모르겠네', '글쎄']
-mType = "맥주 종류는 '에일', 'IPA', '라거', '바이젠', '흑맥주'가 있어\n"
-ale = "에일은 풍부한 향과 진한 색이 특징이야.\n" 
-ipa = "IPA는 인디아 페일에일의 준말로, 맛이 강하고 쌉쌀한 편이지.\n" 
-lager = "라거는 탄산이 많고 가볍고 청량해.\n" 
-dark = "흑맥주는 색이 까맣고 향미가 진하고.\n"
+mType = "맥주 종류는 '에일', 'IPA', '라거', '바이젠', '흑맥주'가 있어.<br />\n"
+ale = "에일은 풍부한 향과 진한 색이 특징이야.<br />\n" 
+ipa = "IPA는 인디아 페일에일의 준말로, 맛이 강하고 쌉쌀한 편이지.<br />\n" 
+lager = "라거는 탄산이 많고 가볍고 청량해.<br />\n" 
+dark = "흑맥주는 색이 까맣고 향미가 진하고.<br />\n"
 mType2 = ale + ipa + lager + dark
-mAbv = "도수는 3도부터 8도까지 있단다.\n"
-mFlavor = "향은 '과일'향, '홉'향, '꽃'향, '상큼한' 향, '커피'향, '스모키한' 향 등이 있어.\n"
-mTaste = "맛은 '단' 맛, '달지 않은' 맛, '씁쓸한' 맛, '쓰지 않은' 맛,'신' 맛, '상큼한' 맛, '시지 않은' 맛,'과일' 맛, '구수한' 맛 등이 있지.\n"        
+mAbv = "도수는 3도부터 8도까지 있단다.<br />\n"
+mFlavor = "향은 '과일'향, '홉'향, '꽃'향, '상큼한' 향, '커피'향, '스모키한' 향 등이 있어.<br />\n"
+mTaste = "맛은 '단' 맛, '달지 않은' 맛, '씁쓸한' 맛, '쓰지 않은' 맛,'신' 맛, '상큼한' 맛, '시지 않은' 맛,'과일' 맛, '구수한' 맛 등이 있지.<br />\n"        
 answer = mType + mType2 + mAbv + mFlavor + mTaste
 
 abvH = ['도수 높은', '도수높은', '도수 높고', '도수높고', '도수 쎈', '도수쎈', '강한 도수', '강한도수',
@@ -119,6 +111,14 @@ def home(): # 슬롯 사전 만들기
 
 
 
+# 추천 맥주 이미지 보여주기
+def showImg(name):
+    return render_template('showImg.html', image_file=f'image/{name}.jpg', encoding='utf-8')
+ 
+if __name__ == "__main__":
+    app.run()
+
+
 @app.route("/get")
 def get_bot_response():
   userText = request.args.get('msg').strip() # 사용자가 입력한 문장
@@ -133,6 +133,14 @@ def get_bot_response():
     return message
 
   text_arr = tokenizer.tokenize(userText)
+  #text_arr = [i for i in text_arr if i != '_']
+  #text_arr = join_jamos(text_arr) 여기서 합치면 types라고 인식 x
+  # for i in text_arr:
+  #   if i == '_':
+  #     del i
+
+  #text_arr = join_jamos(text_arr)
+  #print('new text arr:', text_arr)
   input_ids, input_mask, segment_ids = bert_vectorizer.transform([" ".join(text_arr)])
 
   # 예측
@@ -143,7 +151,11 @@ def get_bot_response():
   # 결과 체크
   print("text_arr:", text_arr) 
   print("inferred_tags:", inferred_tags[0])
-  print("slots_score:", slots_score[0])   
+  print("slots_score:", slots_score[0])  
+  
+  # if ['에이', 'ᆯ', '_'] in text_arr:
+  #   text_arr = join_jamos(text_arr[:2])
+  # print('text arr after join jamos : ', text_arr)
 
   # 슬롯에 해당하는 텍스트를 담을 변수 설정
   slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
@@ -152,19 +164,36 @@ def get_bot_response():
   for i in range(0, len(inferred_tags[0])):    
     if slots_score[0][i] >= app.score_limit:
       catch_slot(i, inferred_tags, text_arr, slot_text)
+      #text_arr = join_jamos(text_arr[:2])
       #slot_text = {'abv': '', 'flavor': '', 'taste': '', 'types': ''}
     else:
       print("something went wrong!")
   print("slot_text:", slot_text)
+  print('text_arr after slot tagging :', text_arr)
+
+  #text_arr = re.sub()
+  # text_arr = join_jamos(text_arr)
+  if '에일' in userText:
+    slot_text['types'] = '에일'
 
   # 옵션의 이름과 일치하는지 검증
   for k in app.slot_dict:  # k : 'types','abv','flavor','taste' 
+    slot_text[k] = join_jamos(slot_text[k])
     for x in dic[k]:
-    # {'types': [types], 'abv': [abv], 'flavor': [flavor], 'taste': [taste]}  
+    # {'types': [types], 'abv': [abv], 'flavor': [flavor], 'taste': [taste]} 
+      print('x:', x) 
       x = x.lower().replace(" ", "\s*") # 대문자를 소문자로 바꾸고? 공백을 
+      #x = join_jamos(x)
+      #slot_text[k] = join_jamos(slot_text[k])
+      # if ('에일' in userText) and ('에이' in text_arr) and ('ㄹ' in text_arr) and ('_' in text_arr):
+      #   slot_text[k] = '에일'
+      print('x: ', x)
       m = re.search(x, slot_text[k])
+      print(m)
       if m:
         app.slot_dict[k].append(m.group())
+  
+  print('app.slot_dict : ', app.slot_dict)
 
 
   # 안~~ 인 형용사를 re.search가 단/쓴/신 등의 원본 단어도 찾아버려서
@@ -223,6 +252,12 @@ def get_bot_response():
     init_app(app)
     return message
 
+
+  # 추천할 슬롯별 맥주 이름 목록을 담을 빈 리스트 생성
+  rcm_types_li = []
+  rcm_abv_li = []
+  rcm_flavor_li = []
+  rcm_taste_li = []
 
   
   # beer 데이터 프레임에서 불러온 종류/향/맛/도수 특징에 대한 리스트 생성
@@ -306,7 +341,7 @@ def get_bot_response():
       message = chatbot_msg(msg_li)
         
     elif len(msg_li) == 4: # 종류, 도수, 향, 맛
-      message = chatbot_msg(msg_li) + f'라져! 널 위한 맥주는 바로!! {intersection}!!'
+      message = chatbot_msg(msg_li) + f'라져! 널 위한 맥주는 바로!! {intersection} !!' + showImg(intersection)
       init_app(app)
       return message
 
@@ -337,40 +372,32 @@ def get_bot_response():
       return ask_msg
 
     elif userText in no:
-      last_msg = f"알았어! 널 위한 맥주는 바로!! {intersection}!!"
+      last_msg = f"알았어! 널 위한 맥주는 바로!! {intersection}!!" + showImg(intersection)
       init_app(app)
       return last_msg
 
   return message
 
-  # li = []
-  # for i in beer_menu.index :
-  #   # 종류
-  #   for j in range(len(slot_dict['types'])):
-  #     if beer_menu['types'][i] == slot_dict['types'][j]:
-  #         li.append(beer_menu['kor_name'][i])
 
-  # print(li)
-  # image(app, li)
+# 추천 맥주 이미지 보여주기
+# def handle_image(imgfilepath):
+#   #이미지 읽어오기
+#   img = cv2.imread(imgfilepath, cv2.IMREAD_COLOR) #사진을 컬러로 읽어오기
+#   return img
 
 
-  
-# # 맥주 이름으로 경로 잡아서 이미지 띄우기... 아직 구현 x
-# def image(app, li):
-#   for i in range(len(li)):
-#     showBeer = plt.imread(f'/content/drive/MyDrive/dailyBeerImage/{i}.jpg')
-#     beerimage = plt.imshow(showBeer)
-#     message1 = '네게 추천할 맥주는 바로!'
-#     beermessage = i
-#     message = message1 + beermessage + beerimage
-#     return message
+# def simpleImageComponent(imageUrl):
+#   return {"simpleImage": {"imageUrl": imageUrl}}
+
+# def simpleImageComponent(imageUrl):
+#   plt.imread()
 
 
-def showImg():
-  return render_template('showImg.html')
+# def showImg():
+#   return render_template('showImg.html')
 
-def showImg():
-  return render_template('showImg.html', image_file='image/name.?')
+# def showImg():
+#   return render_template('showImg.html', image_file='image/name.?')
 
           
 # 종류, 향, 맛 슬롯 단어에 해당하는 맥주를 dic 형태로 전환 ex) {"맥주 이름" : ["홉", "꽃"]}
@@ -386,8 +413,11 @@ def make_set(li_slots):
     
 def catch_slot(i, inferred_tags, text_arr, slot_text):
   if not inferred_tags[0][i] == "O":
-    word_piece = re.sub("_", " ", text_arr[i])
+    #text_arr = [i for i in text_arr if i != '_']
+    word_piece = re.sub("_", "", text_arr[i])
+    #word_piece = join_jamos(word_piece) 에일은 에일대로 안되고 다른 것까지 안됨...
     slot_text[inferred_tags[0][i]] += word_piece
+    #text_arr = join_jamos(text_arr)
 # inffered_tags = ['O', 'abv', 'abv', 'O', 'type', 'type', 'type', 'O', 'O', 'O', 'O', 'O', 'flavor', 'flavor', 'flavor', 'flavor', 'O', 'O']
 #text_arr = ['나는_', '7', '도_', '넘는_', '흑', '맥', '주로_', '주', '문', '하고_', '싶', '어_', '스', '모', '키', '한_', '걸', '로_']
 #slot_text = {'beer_abv': '7도', 'beer_flavor': '', 'beer_taste': '', 'beer_types': '흑맥주'}
