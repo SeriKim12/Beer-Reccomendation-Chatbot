@@ -67,7 +67,7 @@ abv = ['3도', '4도', '5도', '6도', '7도', '8도', '3도이상', '4도이상
 flavor = ['과일', '홉', '꽃', '상큼한', '커피', '스모키한']
 taste = ['단', '달달한', '달콤한', '안단', '안 단', '달지 않은', '달지않은', '쓴', '씁쓸한',
           '쌉쌀한', '달콤씁쓸한', '안쓴', '안 쓴', '쓰지 않은',  '신', '상큼한', '새콤달콤한', 
-          '시지 않은', '시지않은', '쓰지않은/','안신', '안 신', '과일', '고소한', '구수한']
+          '시지 않은', '시지않은', '쓰지않은','안신', '안 신', '과일', '고소한', '구수한']
 
 options = {'types':'종류', 'abv':'도수', 'flavor':'향', 'taste':'맛'}
 dic = {i:globals()[i] for i in options}
@@ -157,7 +157,7 @@ def get_bot_response():
       print("something went wrong!")
   print("slot_text:", slot_text)
 
-  # 메뉴판의 이름과 일치하는지 검증
+  # 옵션의 이름과 일치하는지 검증
   for k in app.slot_dict:  # k : 'types','abv','flavor','taste' 
     for x in dic[k]:
     # {'types': [types], 'abv': [abv], 'flavor': [flavor], 'taste': [taste]}  
@@ -166,6 +166,18 @@ def get_bot_response():
       if m:
         app.slot_dict[k].append(m.group())
   print("app.slot_dict :", app.slot_dict)           
+
+  # for k in app.slot_dict:
+  #   for x in dic[k]:
+  #     x = x.lower().replace(" ", "\s*")
+  #     m = re.search(x, slot_text[k])
+  #     if m:
+  #       if len(m.group()) >= len(slot_text[k]):
+  #         app.slot_dict[k].append(m.group())
+  # print("app.slot_dict :", app.slot_dict)
+
+
+
 
   #options = {'beer_types':'종류', 'beer_abv':'도수', 'beer_flavor':'향', 'beer_taste':'맛'}
   empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
@@ -195,44 +207,50 @@ def get_bot_response():
     message = 'Okay bye...'
     init_app(app)
     return message
-  # types
-  tmp_types_li = beer.loc[beer['types'] == app.slot_dict['types'][0], 'kor_name']
-  tmp_types_li = tmp_types_li.tolist()
-  rcm_types_li = tmp_types_li
+
+
   
+  # beer 데이터 프레임에서 불러온 종류/향/맛/도수 특징에 대한 리스트 생성
+  li_types = beer.loc[:, 'types'].tolist()
   li_flavors = beer.loc[:, "flavor"].tolist()
   li_tastes = beer.loc[:, "taste"].tolist()
   li_abvs = beer.loc[:, "abv"].tolist()
 
-  # abv
+  # 입력받은 types 슬롯 단어에 해당하는 맥주 이름 불러오기
+  for k ,v in make_set(li_types).items():
+    for i in range(len(v)):
+      for j in range(len(app.slot_dict['types'])):
+        if v[i] == app.slot_dict['types'][j]:
+          rcm_types_li.append(k)
 
+  # 입력받은 abv 슬롯 단어에 해당하는 맥주 이름 불러오기
   li_abvs = {k : float(v) for k, v in zip(beer['kor_name'], li_abvs)}
 
   for abv in app.slot_dict['abv']:
-      abv = re.sub(" ", "", abv)
-      for k in li_abvs: # 도수
-          if abv.endswith("도이상") and float(li_abvs[k]) >= float(abv[0]):
-              rcm_abv_li.append(k)
-              
-          elif abv.endswith("도이하") and float(li_abvs[k]) <= float(abv[0]):
-              rcm_abv_li.append(k)
-              
-          elif abv.endswith("도") and int(li_abvs[k]) == int(abv[0]):
-              rcm_abv_li.append(k)
+    abv = re.sub(" ", "", abv)
+    for k in li_abvs: # 도수
+      if abv.endswith("도이상") and float(li_abvs[k]) >= float(abv[0]):
+        rcm_abv_li.append(k)
+          
+      elif abv.endswith("도이하") and float(li_abvs[k]) <= float(abv[0]):
+        rcm_abv_li.append(k)
+          
+      elif abv.endswith("도") and int(li_abvs[k]) == int(abv[0]):
+        rcm_abv_li.append(k)
 
-  # flavor
+  # 입력받은 flavor 슬롯 단어에 해당하는 맥주 이름 불러오기
   for k ,v in make_set(li_flavors).items():
-      for i in range(len(v)):
-          for j in range(len(app.slot_dict['flavor'])):
-              if v[i] == app.slot_dict['flavor'][j]:
-                  rcm_flavor_li.append(k)
+    for i in range(len(v)):
+      for j in range(len(app.slot_dict['flavor'])):
+        if v[i] == app.slot_dict['flavor'][j]:
+          rcm_flavor_li.append(k)
 
-  # taste
+  # 입력받은 taste 슬롯 단어에 해당하는 맥주 이름 불러오기
   for k ,v in make_set(li_tastes).items():
-      for i in range(len(v)):
-          for j in range(len(app.slot_dict['taste'])):
-              if v[i] == app.slot_dict['taste'][j]:
-                  rcm_taste_li.append(k)
+    for i in range(len(v)):
+      for j in range(len(app.slot_dict['taste'])):
+        if v[i] == app.slot_dict['taste'][j]:
+          rcm_taste_li.append(k)
 
   rcm_types = list(set(rcm_types_li))
   rcm_abv = list(set(rcm_abv_li))
@@ -245,35 +263,37 @@ def get_bot_response():
   print("rcm_taste :", rcm_taste)
 
   # 최종 추천 제품
+  intersection = []
   intersection = max((rcm_types + rcm_abv + rcm_flavor + rcm_taste), key= (rcm_types + rcm_abv + rcm_flavor + rcm_taste).count)
   print("intersection :", intersection)
-  
+
   if ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
     message = '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??'   
   
   if ('종류' in filled_slot or '도수' in filled_slot or '향' in filled_slot or '맛' in filled_slot):
-    
     tmp_li = []
     
     for i in range(0, len(inferred_tags[0])):
-        if not inferred_tags[0][i] == "O":
-            tmp_li.append(slot_text[inferred_tags[0][i]])
+      if not inferred_tags[0][i] == "O":
+        tmp_li.append(slot_text[inferred_tags[0][i]])
     
+    print('tmp_li :', tmp_li)
+
     msg_li = list(set(tmp_li))
     
     if len(msg_li) == 1:
-        message = chatbot_msg(msg_li)
+      message = chatbot_msg(msg_li)
         
     elif len(msg_li) == 2:
-        message = chatbot_msg(msg_li)   
+      message = chatbot_msg(msg_li)   
             
     elif len(msg_li) == 3:
-        message = chatbot_msg(msg_li)
+      message = chatbot_msg(msg_li)
         
     elif len(msg_li) == 4: # 종류, 도수, 향, 맛
-        message = chatbot_msg(msg_li) + f'라져! 널 위한 맥주는 바로!! {intersection}!!'
-        init_app(app)
-        return message
+      message = chatbot_msg(msg_li) + f'라져! 널 위한 맥주는 바로!! {intersection}!!'
+      init_app(app)
+      return message
 
     # # 슬롯으로 잡지만 사실 슬롯에 해당하는 단어가 아닌 경우
     # for i in ['에일', 'IPA', '라거', '바이젠', '흑맥주', 'ipa']:
@@ -298,15 +318,13 @@ def get_bot_response():
     #   return miss
         
     if userText in ['응', '네', '있어']:
-        ask_msg = "어떤 걸 찾고 있어?"
-        return ask_msg
+      ask_msg = "어떤 걸 찾고 있어?"
+      return ask_msg
 
     elif userText in no:
-        last_msg = f"알았어! 널 위한 맥주는 바로!! {intersection}!!"
-        init_app(app)
-        return last_msg
-      
-  
+      last_msg = f"알았어! 널 위한 맥주는 바로!! {intersection}!!"
+      init_app(app)
+      return last_msg
 
   return message
 
@@ -331,17 +349,25 @@ def get_bot_response():
 #     beermessage = i
 #     message = message1 + beermessage + beerimage
 #     return message
+
+
+def showImg():
+  return render_template('showImg.html')
+
+def showImg():
+  return render_template('showImg.html', image_file='image/name.?')
+
           
-# 향, 맛을 dic 형태로 전환 ex) {"맥주 이름" : ["홉", "꽃"]}
+# 종류, 향, 맛 슬롯 단어에 해당하는 맥주를 dic 형태로 전환 ex) {"맥주 이름" : ["홉", "꽃"]}
 def make_set(li_slots):
-    li = []
-    for i in li_slots:
-        i = i.split(",")
-        li.append(i)
-        
-    li_slots = li
-    li_slots = {k : v for k, v in zip(beer['kor_name'], li_slots)}
-    return li_slots
+  li = []
+  for i in li_slots:
+    i = i.split(",")
+    li.append(i)
+      
+  li_slots = li
+  li_slots = {k : v for k, v in zip(beer['kor_name'], li_slots)}
+  return li_slots
     
 def catch_slot(i, inferred_tags, text_arr, slot_text):
   if not inferred_tags[0][i] == "O":
