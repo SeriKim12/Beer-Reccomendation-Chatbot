@@ -374,7 +374,7 @@ def get_bot_response():
       return ask_msg
 
     elif userText in no:
-      last_msg = f"알았어! 널 위한 맥주는 바로!! {intersection}!!" + showImg(intersection)
+      last_msg = f"알았어! 널 위한 맥주는 바로!!<br />\n" + showImg(intersection) + f"<br />\n{intersection}!! <br />\n맛있게 먹으렴!"
       init_app(app)
       return last_msg
 
