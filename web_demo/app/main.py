@@ -12,7 +12,7 @@ from to_array.tokenizationK import FullTokenizer
 
 # -----------------------------------------------------------------
 # 맥주 이름&설명을 크롤링한 csv파일 읽어오기
-beer = pd.read_csv("/content/drive/MyDrive/codes/web_demo/app/test2.csv")
+beer = pd.read_csv('/content/drive/MyDrive/codes/web_demo/app/beer_menu.csv')
 
 # 슬롯태깅 모델과 벡터라이저 불러오기
 # ETRI에서 사전훈련한 KorBERT 체크포인트파일을 모듈로 export한 BERT 모듈 경로
@@ -29,9 +29,8 @@ bert_vectorizer = BERTToArray(is_bert, vocab_file)
 # 보캡 파일로 토크나이징
 tokenizer = FullTokenizer(vocab_file=vocab_file)
 
-
-load_folder_path = '/content/drive/MyDrive/finetuned'
 # loading models
+load_folder_path = '/content/drive/MyDrive/finetuned'
 print('Loading models ...')
 if not os.path.exists(load_folder_path):
     print('Folder `%s` not exist' % load_folder_path)
@@ -185,14 +184,10 @@ def get_bot_response():
 
   # 옵션의 이름과 일치하는지 검증
   for k in app.slot_dict:  # k : 'types','abv','flavor','taste' 
-    #slot_text[k] = join_jamos(slot_text[k])
     for x in dic[k]:
-    # {'types': [types], 'abv': [abv], 'flavor': [flavor], 'taste': [taste]} 
-      #print('x:', x) 
-      x = x.lower().replace(" ", "\s*") # 대문자를 소문자로 바꾸고? 공백을 
-      #print('x: ', x)
+      x = x.lower().replace(" ", "\s*") # 대문자를 소문자로, 공백이 있는 부분을 공백이 있거나 없거나로 변경.
       m = re.search(x, slot_text[k])
-      #print(m)
+
       if m:
         app.slot_dict[k].append(m.group())
   
@@ -206,13 +201,6 @@ def get_bot_response():
       del(app.slot_dict['taste'][0]) #app.slot_dict['taste'][0] 은 항상 쓴/단/신 등이므로
 
   print("app.slot_dict :", app.slot_dict) 
-
-  # 안~~ 인 형용사를 re.search가 단/쓴/신 등의 원본 단어도 찾아버려서
-  taste_v = ['안쓴', '안신', '안단']
-  for i in taste_v :
-    if i in slot_text['taste'] :
-      del(app.slot_dict['taste'][0])
-  print("app.slot_dict :", app.slot_dict)
 
   abv_v = ['3도이상', '4도이상', '5도이상', '6도이상', '7도이상', '8도이하', '4도이하', '5도이하', '6도이하', '7도이하']
   for i in abv_v :
@@ -357,17 +345,18 @@ def get_bot_response():
   print("rcm_taste :", rcm_taste)
 
   # 최종 추천 제품
-  rcm_merge = rcm_types + rcm_abv + rcm_flavor + rcm_taste # 위 리스트를 합친 
+  rcm_merge = rcm_types + rcm_abv + rcm_flavor + rcm_taste # 위 리스트를 합친 것
   
   # 키값
   rcm_merge_key = rcm_merge.count
   intersection_beer = max(rcm_merge, key= rcm_merge_key) # 가장 많이 반복 되는 맥주
   intersection_idx = rcm_merge.index(intersection_beer) # 가장 많이 반복 되는 맥주의 index
 
-  if intersection_idx == 0 and rcm_merge.count(intersection_beer) == 1:
-    rcm_idx = intersection_idx
-    rcm_idx += random.randrange(0, len(rcm_merge))
-    fin_rcm_beer = rcm_merge[rcm_idx]
+  if intersection_idx == 0 and rcm_merge.count(intersection_beer) == 1: # 입력된 슬롯이 하나일 경우
+    rcm_idx = intersection_idx                        # 가장 많이 반복되는 맥주의 index값에,
+    rcm_idx += random.randrange(0, len(rcm_merge))  # 0부터 최종 추천 제품 리스트 길이만큼의 범위에서 랜덤으로 숫자를 더한 후
+    fin_rcm_beer = rcm_merge[rcm_idx]               # 최종 추천 제품 리스트에서 그 숫자만큼의 인덱스 번호를 가진 맥주를 추천함
+                          # 이렇게 강제적으로 인덱스를 바꾸지 않으면 항상 rcm_merge의 0번 인덱스가 intersection_beer라고 인식되기 때문
 
   else:
     fin_rcm_beer = intersection_beer
@@ -383,16 +372,15 @@ def get_bot_response():
 
   # 슬롯이 하나 이상 채워질 경우, inferred_tag가 'O'이 아니면 msg_li에 추가
   elif ('종류' in filled_slot or '도수' in filled_slot or '향' in filled_slot or '맛' in filled_slot):
-    # tmp_li = []
     msg_li = []
     for i in range(0, len(inferred_tags[0])):
       if not inferred_tags[0][i] == "O":
-        # tmp_li.append(slot_text[inferred_tags[0][i]])
         msg_li.append(slot_text[inferred_tags[0][i]])
         break
     message = chatbot_msg(msg_li, slot_text)
+    # message = "{} 말이지? <br />\n더 고려할 사항이 있니?".format(msg_li)
 
-    if userText in ['응', '네', '있어']:
+    if userText in ['응', '네', '있어']: 
       ask_msg = "어떤 걸 찾고 있어?"
       return ask_msg
 
@@ -414,13 +402,14 @@ def make_set(li_slots):
   li_slots = li
   li_slots = {k : v for k, v in zip(beer['kor_name'], li_slots)}
   return li_slots
-    
+
+# 예측된 태그가 O가 아니라면 정규표현식으로 '_' 를 제거    
 def catch_slot(i, inferred_tags, text_arr, slot_text):
   if not inferred_tags[0][i] == "O":
     word_piece = re.sub("_", "", text_arr[i])
     slot_text[inferred_tags[0][i]] += word_piece
     
-# inffered_tags = ['O', 'abv', 'abv', 'O', 'type', 'type', 'type', 'O', 'O', 'O', 'O', 'O', 'flavor', 'flavor', 'flavor', 'flavor', 'O', 'O']
+# infered_tags = ['O', 'abv', 'abv', 'O', 'type', 'type', 'type', 'O', 'O', 'O', 'O', 'O', 'flavor', 'flavor', 'flavor', 'flavor', 'O', 'O']
 #text_arr = ['나는_', '7', '도_', '넘는_', '흑', '맥', '주로_', '주', '문', '하고_', '싶', '어_', '스', '모', '키', '한_', '걸', '로_']
 #slot_text = {'beer_abv': '7도', 'beer_flavor': '', 'beer_taste': '', 'beer_types': '흑맥주'}
 
@@ -439,6 +428,7 @@ def chatbot_msg(msg_li, slot_text):
         if slot_text[k] == app.slot_dict[k][i]:
           app.slot_dict[k][i] += ' 맛'
     msg_li.extend(app.slot_dict[k])
+
   for i in range(len(msg_li)):
     msg_li[i] = msg_li[i].strip() # msg_li에서 공백 제거
   del msg_li[0]
