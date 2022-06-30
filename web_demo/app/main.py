@@ -1,44 +1,52 @@
 # -*- coding: utf-8 -*-
+# 최종 코드
 from flask import Flask, render_template, request
 from flask_ngrok import run_with_ngrok
 import tensorflow as tf
-import os, pickle, re, sys, random
+import os, pickle, re, sys
 import pandas as pd
+import random
+from hangul_utils import join_jamos, split_syllables
+import unicodedata
 
-sys.path.append('/content/drive/MyDrive/codes/codes/')
+sys.path.append( '/content/drive/MyDrive/codes' )
+
 from models.bert_slot_model import BertSlotModel
 from to_array.bert_to_array import BERTToArray
 from to_array.tokenizationK import FullTokenizer
 
+
+# beer = pd.read_csv("./app/test2.csv")
+beer = pd.read_csv("/content/drive/MyDrive/web_demo/app/test2.csv") # colab
+
 # -----------------------------------------------------------------
-# 맥주 이름&설명을 크롤링한 csv파일 읽어오기
-beer = pd.read_csv('/content/drive/MyDrive/codes/web_demo/app/beer_menu.csv')
 
 # 슬롯태깅 모델과 벡터라이저 불러오기
-# ETRI에서 사전훈련한 KorBERT 체크포인트파일을 모듈로 export한 BERT 모듈 경로
-bert_model_hub_path = '/content/drive/MyDrive/bert-module' 
-is_bert = True
 
+bert_model_hub_path = '/content/drive/MyDrive/codes/bert-module'
+# pretrained BERT 모델을 모듈로 export - ETRI에서 사전훈련한 BERT의 체크포인트를 가지고 만든 BERT 모듈
+is_bert = True
 
 # 토큰화된 단어들을 임베딩한 단어 사전 파일
 vocab_file = os.path.join(bert_model_hub_path, 'assets/vocab.korean.rawtext.list')
 
 # 벡터라이저
 bert_vectorizer = BERTToArray(is_bert, vocab_file)
+# 바꾼 이유가..?
+bert_to_array = BERTToArray(is_bert, vocab_file)
 
 # 보캡 파일로 토크나이징
 tokenizer = FullTokenizer(vocab_file=vocab_file)
 
+load_folder_path = '/content/drive/MyDrive/codes/save_model'
 # loading models
-load_folder_path = '/content/drive/MyDrive/finetuned'
 print('Loading models ...')
 if not os.path.exists(load_folder_path):
-    print('Folder `%s` not exist' % load_folder_path)
+  print('Folder `%s` not exist' % load_folder_path)
 
-# 파인튜닝을 통해 만들어진 tags_to_array.pkl 파일을 태그 벡터라이저로 사용.
 with open(os.path.join(load_folder_path, 'tags_to_array.pkl'), 'rb') as handle:
-  tags_vectorizer = pickle.load(handle)
-  slots_num = len(tags_vectorizer.label_encoder.classes_)
+  tags_to_array = pickle.load(handle)
+  slots_num = len(tags_to_array.label_encoder.classes_)
  
 # this line is to disable gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="-1"
@@ -49,7 +57,6 @@ config = tf.ConfigProto(intra_op_parallelism_threads=1,
 sess = tf.compat.v1.Session(config=config)
 graph = tf.compat.v1.get_default_graph()
 
-# finetuned_epoch128로 훈련시킨 슬롯태깅모델
 model = BertSlotModel.load(load_folder_path, sess)
 
 # 슬롯 사전 단어들
@@ -99,7 +106,6 @@ endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어
 noSlot = ['맥주 마시고 싶당', '맥쥬 맥쥬', '맥주 한 잔이면 스트레스가 싸악 가셔요', 
             '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??']
 
-
 app = Flask(__name__)
 app.static_folder = 'static'
 
@@ -109,15 +115,12 @@ def home(): # 슬롯 사전 만들기
   app.score_limit = 0.8
   return render_template("index.html")
 
-
-
 # 추천 맥주 이미지 보여주기
 def showImg(name):
     return render_template('showImg.html', image_file=f'image/{name}.jpg', encoding='utf-8')
  
 if __name__ == "__main__":
     app.run()
-
 
 @app.route("/get")
 def get_bot_response():
@@ -141,7 +144,7 @@ def get_bot_response():
   # 예측 : inferred_tags(모델이 추론한 태그 명), slots_score(슬롯일 거라고 예측한 점수) 값 구하기.
   with graph.as_default():
     with sess.as_default():
-      inferred_tags, slots_score = model.predict_slots([input_ids, input_mask, segment_ids], tags_vectorizer)
+      inferred_tags, slots_score = model.predict_slots([input_ids, input_mask, segment_ids], tags_to_array)
 
   # 결과 체크
   print("text_arr:", text_arr) 
@@ -166,17 +169,11 @@ def get_bot_response():
   print("slot_text:", slot_text)
   print('text_arr after slot tagging :', text_arr)
 
-  
-  # 에일을 잡지 못해서 slot_text에 직접 추가
-  if '에일' in userText:
-    slot_text['types'] = '에일'
-
   # 도수 높은~ 과 비슷한 뉘앙스의 말 = 6도이상 으로 태깅
   for a in abvH:
     if a in userText:
       slot_text['abv'] = '6도이상'
 
-  
   # 도수 낮은~ 과 비슷한 뉘앙스의 말 = 4도이하 로 태깅
   for a in abvL:
     if a in userText:
@@ -186,13 +183,15 @@ def get_bot_response():
   for k in app.slot_dict:  # k : 'types','abv','flavor','taste' 
     for x in dic[k]:
       x = x.lower().replace(" ", "\s*") # 대문자를 소문자로, 공백이 있는 부분을 공백이 있거나 없거나로 변경.
-      m = re.search(x, slot_text[k])
+      b = unicodedata.normalize('NFC',slot_text[k])
+      c = split_syllables(b) # 쪼개기
+      d = join_jamos(c) # 합치기
+      m = re.search(x, d)
 
       if m:
         app.slot_dict[k].append(m.group())
   
   print('app.slot_dict : ', app.slot_dict)
-
 
   # 안~~ 인 형용사를 re.search가 단/쓴/신 등의 원본 단어도 찾아버려서
   taste_v = ['안 쓴', '안쓴', '안 신', '안신', '안단', '안 단']
@@ -200,15 +199,13 @@ def get_bot_response():
     if i in slot_text['taste'] :
       del(app.slot_dict['taste'][0]) #app.slot_dict['taste'][0] 은 항상 쓴/단/신 등이므로
 
-  print("app.slot_dict :", app.slot_dict) 
+  # print("app.slot_dict :", app.slot_dict) 
 
   abv_v = ['3도이상', '4도이상', '5도이상', '6도이상', '7도이상', '8도이하', '4도이하', '5도이하', '6도이하', '7도이하']
   for i in abv_v :
     if i in slot_text['abv'] :
       del(app.slot_dict['abv'][0])
-  print("app.slot_dict :", app.slot_dict)    
-  
-
+  # print("app.slot_dict :", app.slot_dict)    
 
   #options = {'beer_types':'종류', 'beer_abv':'도수', 'beer_flavor':'향', 'beer_taste':'맛'}
   empty_slot = [options[k] for k in app.slot_dict if not app.slot_dict[k]]
@@ -246,50 +243,12 @@ def get_bot_response():
   elif userText in ['고마워', 'ㄱㅅ', '땡큐', '감사합니다', '감사해요']:
     message = '고맙긴 뭘ㅎㅎ 그럼 즐맥하라구~!!'
     return message
-
-  # for i in ['에일', 'IPA', '라거', '바이젠', '흑맥주', 'ipa']:
-  #   if 'types' in inferred_tags[0] and i not in userText:
-  #     #app.slot_dict['types'] = None
-  #     del slot_text['types']
-  #     message = f'네가 찾는 건 없네ㅠㅠ {mType}'
-  #     init_app(app)
-  #     return message
   
-  # for i in ['3도', '4도', '5도', '6도', '7도', '8도']:
-  #   if 'abv' in inferred_tags[0] and i not in userText:
-  #     #app.slot_dict['abv'] = None
-  #     del slot_text['abv']
-  #     message = f'네가 찾는 건 없어ㅠㅠ {mAbv}'
-  #     init_app(app)
-  #     return message
-  
-  # for i in taste:
-  #   if 'taste' in inferred_tags[0] and i not in userText:
-  #     #app.slot_dict['taste'] = None
-  #     del slot_text['taste']
-  #     message = f'네가 찾는 건 없네ㅠㅠ {mTaste}'
-  #     init_app(app)
-  #     return message
-
-  # for i in flavor:
-  #   if 'flavor' in inferred_tags[0] and i not in userText:
-  #     #app.slot_dict['flavor'] = None
-  #     del slot_text['flavor']
-  #     message = f'네가 찾는 건 없네ㅠㅠ {mFlavor}'
-  #     init_app(app)
-  #     return message
-
-
-
-  
-
-
   # 추천할 슬롯별 맥주 이름 목록을 담을 빈 리스트 생성
   rcm_types_li = []
   rcm_abv_li = []
   rcm_flavor_li = []
   rcm_taste_li = []
-
   
   # beer 데이터 프레임에서 불러온 종류/향/맛/도수 특징에 대한 리스트 생성
   li_types = beer.loc[:, 'types'].tolist()
@@ -363,11 +322,9 @@ def get_bot_response():
 
   print("최종 추천 제품 :", fin_rcm_beer)
 
-
-  
   # 종류, 도수, 향, 맛 슬롯이 하나도 채워지지 않은 문장일 경우 = noSlot에서 랜덤으로 출력.
   if ('종류' in empty_slot and '도수' in empty_slot and '향' in empty_slot and '맛' in empty_slot):
-    message = random.choice(noSlot)
+    message = random.choice(noSlot)  # 슬롯 데이터에 없는걸 입력 했을 경우
     return message
 
   # 슬롯이 하나 이상 채워질 경우, inferred_tag가 'O'이 아니면 msg_li에 추가
@@ -377,17 +334,22 @@ def get_bot_response():
       if not inferred_tags[0][i] == "O":
         msg_li.append(slot_text[inferred_tags[0][i]])
         break
+
     message = chatbot_msg(msg_li, slot_text)
     # message = "{} 말이지? <br />\n더 고려할 사항이 있니?".format(msg_li)
 
     if userText in ['응', '네', '있어']: 
-      ask_msg = "어떤 걸 찾고 있어?"
-      return ask_msg
+      message = "어떤 걸 찾고 있어?"
+      return message
+      # ask_msg = "어떤 걸 찾고 있어?"
+      # return ask_msg
 
     elif userText in no:
-      last_msg = f"알았어! 널 위한 맥주는 바로!! {fin_rcm_beer}!!" + showImg(fin_rcm_beer)
+      message = f"알았어! 널 위한 맥주는 바로!! {fin_rcm_beer}!!" + showImg(fin_rcm_beer)
       init_app(app)
-      return last_msg
+      # last_msg = f"알았어! 널 위한 맥주는 바로!! {fin_rcm_beer}!!" + showImg(fin_rcm_beer)
+      # init_app(app)
+      # return last_msg
 
     return message
 
@@ -431,9 +393,10 @@ def chatbot_msg(msg_li, slot_text):
 
   for i in range(len(msg_li)):
     msg_li[i] = msg_li[i].strip() # msg_li에서 공백 제거
+    
+    
   del msg_li[0]
   msg_li = list(set(msg_li)) # 중복 제거
-  message = "{} 말이지? <br />\n더 고려할 사항이 있니?".format(msg_li)
+  message = "{} 말이지? <br />\n더 고려할 사항이 있니?".format(', '.join(msg_li))
   return message
 
-  
