@@ -1,52 +1,45 @@
 # -*- coding: utf-8 -*-
-# 최종 코드
 from flask import Flask, render_template, request
 from flask_ngrok import run_with_ngrok
 import tensorflow as tf
-import os, pickle, re, sys
+import os, pickle, re, sys, random
 import pandas as pd
-import random
-from hangul_utils import join_jamos, split_syllables
-import unicodedata
 
-sys.path.append( '/content/drive/MyDrive/codes' )
-
+sys.path.append('/content/drive/MyDrive/codes/codes/')
 from models.bert_slot_model import BertSlotModel
 from to_array.bert_to_array import BERTToArray
 from to_array.tokenizationK import FullTokenizer
-
-
-# beer = pd.read_csv("./app/test2.csv")
-beer = pd.read_csv("/content/drive/MyDrive/web_demo/app/test2.csv") # colab
-
+from hangul_utils import join_jamos, split_syllables
+import unicodedata
 # -----------------------------------------------------------------
+# 맥주 이름&설명을 크롤링한 csv파일 읽어오기
+beer = pd.read_csv('/content/drive/MyDrive/codes/web_demo/app/beer_menu.csv')
 
 # 슬롯태깅 모델과 벡터라이저 불러오기
-
-bert_model_hub_path = '/content/drive/MyDrive/codes/bert-module'
-# pretrained BERT 모델을 모듈로 export - ETRI에서 사전훈련한 BERT의 체크포인트를 가지고 만든 BERT 모듈
+# ETRI에서 사전훈련한 KorBERT 체크포인트파일을 모듈로 export한 BERT 모듈 경로
+bert_model_hub_path = '/content/drive/MyDrive/bert-module' 
 is_bert = True
+
 
 # 토큰화된 단어들을 임베딩한 단어 사전 파일
 vocab_file = os.path.join(bert_model_hub_path, 'assets/vocab.korean.rawtext.list')
 
 # 벡터라이저
 bert_vectorizer = BERTToArray(is_bert, vocab_file)
-# 바꾼 이유가..?
-bert_to_array = BERTToArray(is_bert, vocab_file)
 
 # 보캡 파일로 토크나이징
 tokenizer = FullTokenizer(vocab_file=vocab_file)
 
-load_folder_path = '/content/drive/MyDrive/codes/save_model'
 # loading models
+load_folder_path = '/content/drive/MyDrive/finetuned'
 print('Loading models ...')
 if not os.path.exists(load_folder_path):
-  print('Folder `%s` not exist' % load_folder_path)
+    print('Folder `%s` not exist' % load_folder_path)
 
+# 파인튜닝을 통해 만들어진 tags_to_array.pkl 파일을 태그 벡터라이저로 사용.
 with open(os.path.join(load_folder_path, 'tags_to_array.pkl'), 'rb') as handle:
-  tags_to_array = pickle.load(handle)
-  slots_num = len(tags_to_array.label_encoder.classes_)
+  tags_vectorizer = pickle.load(handle)
+  slots_num = len(tags_vectorizer.label_encoder.classes_)
  
 # this line is to disable gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="-1"
@@ -57,6 +50,7 @@ config = tf.ConfigProto(intra_op_parallelism_threads=1,
 sess = tf.compat.v1.Session(config=config)
 graph = tf.compat.v1.get_default_graph()
 
+# finetuned_epoch128로 훈련시킨 슬롯태깅모델
 model = BertSlotModel.load(load_folder_path, sess)
 
 # 슬롯 사전 단어들
@@ -106,6 +100,7 @@ endings = ['quit', '종료', '그만', '멈춰', 'stop', '안마실래', '싫어
 noSlot = ['맥주 마시고 싶당', '맥쥬 맥쥬', '맥주 한 잔이면 스트레스가 싸악 가셔요', 
             '원하는 맥주의 종류는? 도수는? 향은? 맛은? 어떤 게 좋니??']
 
+
 app = Flask(__name__)
 app.static_folder = 'static'
 
@@ -115,12 +110,14 @@ def home(): # 슬롯 사전 만들기
   app.score_limit = 0.8
   return render_template("index.html")
 
+
 # 추천 맥주 이미지 보여주기
 def showImg(name):
     return render_template('showImg.html', image_file=f'image/{name}.jpg', encoding='utf-8')
  
 if __name__ == "__main__":
     app.run()
+
 
 @app.route("/get")
 def get_bot_response():
@@ -144,7 +141,7 @@ def get_bot_response():
   # 예측 : inferred_tags(모델이 추론한 태그 명), slots_score(슬롯일 거라고 예측한 점수) 값 구하기.
   with graph.as_default():
     with sess.as_default():
-      inferred_tags, slots_score = model.predict_slots([input_ids, input_mask, segment_ids], tags_to_array)
+      inferred_tags, slots_score = model.predict_slots([input_ids, input_mask, segment_ids], tags_vectorizer)
 
   # 결과 체크
   print("text_arr:", text_arr) 
@@ -399,4 +396,3 @@ def chatbot_msg(msg_li, slot_text):
   msg_li = list(set(msg_li)) # 중복 제거
   message = "{} 말이지? <br />\n더 고려할 사항이 있니?".format(', '.join(msg_li))
   return message
-
